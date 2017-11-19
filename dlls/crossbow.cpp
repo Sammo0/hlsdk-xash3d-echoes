@@ -27,6 +27,8 @@
 #define BOLT_AIR_VELOCITY	2000
 #define BOLT_WATER_VELOCITY	1000
 
+extern BOOL gPhysicsInterfaceInitialized;
+
 // UNDONE: Save/restore this?  Don't forget to set classname and LINK_ENTITY_TO_CLASS()
 // 
 // OVERLOADS SOME ENTVARS:
@@ -167,9 +169,11 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			pev->angles.z = RANDOM_LONG( 0, 360 );
 			pev->nextthink = gpGlobals->time + 10.0;			
 
-			// g-cont. Setup movewith feature
-			pev->movetype = MOVETYPE_COMPOUND;	// set movewith type
-			pev->aiment = ENT( pOther->pev );	// set parent
+			if (gPhysicsInterfaceInitialized) {
+				// g-cont. Setup movewith feature
+				pev->movetype = MOVETYPE_COMPOUND;	// set movewith type
+				pev->aiment = ENT( pOther->pev );	// set parent
+			}
 		}
 
 		if( UTIL_PointContents( pev->origin ) != CONTENTS_WATER )
@@ -349,7 +353,7 @@ void CCrossbow::PrimaryAttack( void )
 // this function only gets called in multiplayer
 void CCrossbow::FireSniperBolt()
 {
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_flNextPrimaryAttack = GetNextAttackDelay( 0.75 );
 
 	if( m_iClip == 0 )
 	{
@@ -421,10 +425,11 @@ void CCrossbow::FireBolt()
 	UTIL_MakeVectors( anglesAim );
 
 	anglesAim.x	= -anglesAim.x;
+
+#ifndef CLIENT_DLL
 	Vector vecSrc	= m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2;
 	Vector vecDir	= gpGlobals->v_forward;
 
-#ifndef CLIENT_DLL
 	CCrossbowBolt *pBolt = CCrossbowBolt::BoltCreate();
 	pBolt->pev->origin = vecSrc;
 	pBolt->pev->angles = anglesAim;
@@ -447,7 +452,7 @@ void CCrossbow::FireBolt()
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate( "!HEV_AMO0", FALSE, 0 );
 
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.75;
+	m_flNextPrimaryAttack = GetNextAttackDelay( 0.75 );
 
 	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.75;
 
@@ -476,7 +481,7 @@ void CCrossbow::SecondaryAttack()
 
 void CCrossbow::Reload( void )
 {
-	if( m_pPlayer->ammo_bolts <= 0 )
+	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 || m_iClip == CROSSBOW_MAX_CLIP )
 		return;
 
 	if( m_pPlayer->pev->fov != 0 )
@@ -484,7 +489,7 @@ void CCrossbow::Reload( void )
 		SecondaryAttack();
 	}
 
-	if( DefaultReload( 5, CROSSBOW_RELOAD, 4.5 ) )
+	if( DefaultReload( CROSSBOW_MAX_CLIP, CROSSBOW_RELOAD, 4.5 ) )
 	{
 		EMIT_SOUND_DYN( ENT( m_pPlayer->pev ), CHAN_ITEM, "weapons/xbow_reload1.wav", RANDOM_FLOAT( 0.95, 1.0 ), ATTN_NORM, 0, 93 + RANDOM_LONG( 0, 0xF ) );
 	}

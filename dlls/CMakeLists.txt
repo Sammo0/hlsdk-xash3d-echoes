@@ -92,11 +92,13 @@ set (SVDLL_SOURCES
 	multiplay_gamerules.cpp
 	nihilanth.cpp
 	nodes.cpp
+	observer.cpp
 	osprey.cpp
 	pathcorner.cpp
 	plane.cpp
 	plats.cpp
 	player.cpp
+	playermonster.cpp
 	python.cpp
 	rat.cpp
 	roach.cpp
