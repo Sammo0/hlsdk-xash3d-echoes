@@ -335,3 +335,150 @@ class CItemLongJump : public CItem
 };
 
 LINK_ENTITY_TO_CLASS( item_longjump, CItemLongJump )
+
+// Derive from CBaseMonster to use SetActivity
+class CEyeScanner : public CBaseMonster
+{
+public:
+	void KeyValue( KeyValueData *pkvd );
+	void Spawn();
+	void Precache(void);
+	void EXPORT PlayBeep();
+	void EXPORT WaitForSequenceEnd();
+	int ObjectCaps( void ) { return CBaseMonster::ObjectCaps() | FCAP_IMPULSE_USE; }
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	int Classify();
+
+	virtual int Save( CSave &save );
+	virtual int Restore( CRestore &restore );
+
+	static TYPEDESCRIPTION m_SaveData[];
+
+	string_t unlockedTarget;
+	string_t lockedTarget;
+	string_t unlockerName;
+	string_t activatorName;
+};
+
+TYPEDESCRIPTION CEyeScanner::m_SaveData[] =
+{
+	DEFINE_FIELD( CEyeScanner, unlockedTarget, FIELD_STRING ),
+	DEFINE_FIELD( CEyeScanner, lockedTarget, FIELD_STRING ),
+	DEFINE_FIELD( CEyeScanner, unlockerName, FIELD_STRING ),
+	DEFINE_FIELD( CEyeScanner, activatorName, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CEyeScanner, CBaseMonster )
+
+LINK_ENTITY_TO_CLASS( item_eyescanner, CEyeScanner )
+
+void CEyeScanner::KeyValue(KeyValueData *pkvd)
+{
+	if (FStrEq(pkvd->szKeyName, "unlocked_target"))
+	{
+		unlockedTarget = ALLOC_STRING(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "locked_target"))
+	{
+		lockedTarget = ALLOC_STRING(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "unlockersname"))
+	{
+		unlockerName = ALLOC_STRING(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "reset_delay")) // Dunno if it affects anything in PC version of Decay
+	{
+		m_flWait = atof(pkvd->szValue);
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CBaseMonster::KeyValue( pkvd );
+}
+
+void CEyeScanner::Spawn()
+{
+	Precache();
+	pev->solid = SOLID_NOT;
+	pev->movetype = MOVETYPE_FLY;
+	pev->takedamage = DAMAGE_NO;
+	pev->health = 1;
+	pev->weapons = 0;
+
+	SET_MODEL(ENT(pev), "models/EYE_SCANNER.mdl");
+	UTIL_SetOrigin(pev, pev->origin);
+	UTIL_SetSize(pev, Vector(-12, -16, 0), Vector(12, 16, 48));
+	SetActivity(ACT_CROUCHIDLE);
+	ResetSequenceInfo();
+	SetThink(NULL);
+}
+
+void CEyeScanner::Precache()
+{
+	PRECACHE_MODEL("models/EYE_SCANNER.mdl");
+	PRECACHE_SOUND("buttons/blip1.wav");
+	PRECACHE_SOUND("buttons/blip2.wav");
+	PRECACHE_SOUND("buttons/button11.wav");
+}
+
+void CEyeScanner::PlayBeep()
+{
+	pev->skin = pev->weapons % 3 + 1;
+	pev->weapons++;
+	if (pev->weapons < 10) {
+		EMIT_SOUND( ENT(pev), CHAN_VOICE, "buttons/blip1.wav", 1, ATTN_NORM );
+		pev->nextthink = gpGlobals->time + 0.125;
+	} else {
+		pev->skin = 0;
+		pev->weapons = 0;
+		if (FStringNull(unlockerName) || (!FStringNull(activatorName) && FStrEq(STRING(unlockerName), STRING(activatorName)))) {
+			EMIT_SOUND( ENT(pev), CHAN_VOICE, "buttons/blip2.wav", 1, ATTN_NORM );
+			FireTargets( STRING( unlockedTarget ), this, this, USE_TOGGLE, 0.0f );
+		} else {
+			EMIT_SOUND( ENT(pev), CHAN_VOICE, "buttons/button11.wav", 1, ATTN_NORM );
+			FireTargets( STRING( lockedTarget ), this, this, USE_TOGGLE, 0.0f );
+		}
+		activatorName = iStringNull;
+		SetActivity(ACT_CROUCH);
+		ResetSequenceInfo();
+		SetThink(&CEyeScanner::WaitForSequenceEnd);
+		pev->nextthink = gpGlobals->time + 0.1;
+	}
+}
+
+void CEyeScanner::WaitForSequenceEnd()
+{
+	if (m_fSequenceFinished) {
+		if (m_Activity == ACT_STAND) {
+			SetActivity(ACT_IDLE);
+			SetThink(&CEyeScanner::PlayBeep);
+			pev->nextthink = gpGlobals->time;
+		} else if (m_Activity == ACT_CROUCH) {
+			SetActivity(ACT_CROUCHIDLE);
+			SetThink(NULL);
+		}
+		ResetSequenceInfo();
+	} else {
+		StudioFrameAdvance(0.1);
+		pev->nextthink = gpGlobals->time + 0.1;
+	}
+}
+
+void CEyeScanner::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value)
+{
+	if (m_Activity == ACT_CROUCHIDLE) {
+		pActivator = pActivator ? pActivator : pCaller;
+		activatorName = pActivator ? pActivator->pev->targetname : iStringNull;
+		SetActivity( ACT_STAND );
+		ResetSequenceInfo();
+		SetThink(&CEyeScanner::WaitForSequenceEnd);
+		pev->nextthink = gpGlobals->time + 0.1;
+	}
+}
+
+int CEyeScanner::Classify()
+{
+	return CLASS_NONE;
+}
