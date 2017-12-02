@@ -317,6 +317,9 @@ void W_Precache( void )
 	UTIL_PrecacheOther( "ammo_9mmAR" );
 	UTIL_PrecacheOther( "ammo_ARgrenades" );
 
+	// displacer
+	UTIL_PrecacheOtherWeapon( "weapon_displacer" );
+
 	// 9mm ammo box
 	UTIL_PrecacheOther( "ammo_9mmbox" );
 
@@ -1628,3 +1631,11 @@ TYPEDESCRIPTION	CSatchel::m_SaveData[] =
 };
 
 IMPLEMENT_SAVERESTORE( CSatchel, CBasePlayerWeapon )
+
+TYPEDESCRIPTION	CDisplacer::m_SaveData[] =
+{
+	DEFINE_FIELD( CDisplacer, m_iFireMode, FIELD_INTEGER ),
+	DEFINE_ARRAY( CDisplacer, m_pBeam, FIELD_CLASSPTR, 3 ),
+};
+
+IMPLEMENT_SAVERESTORE( CDisplacer, CBasePlayerWeapon )

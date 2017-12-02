@@ -131,6 +131,7 @@ set (SVDLL_SOURCES
 	bot/bot_combat.cpp
 	bot/bot.cpp
 	bot/botcam.cpp
+	decay/displacer.cpp
 	../pm_shared/pm_debug.c
 	../pm_shared/pm_math.c
 	../pm_shared/pm_shared.c
