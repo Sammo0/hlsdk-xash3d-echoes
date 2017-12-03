@@ -188,6 +188,16 @@ int gmsgBhopcap = 0;
 int gmsgStatusText = 0;
 int gmsgStatusValue = 0;
 
+int gmsgLensFlare = 0;
+int gmsgAimFrame = 0;
+int gmsgNotepad = 0;
+int gmsgChangeMode = 0;
+int gmsgChangePlr = 0;
+int gmsgCamera = 0;
+int gmsgSparePlayer = 0;
+int gmsgAlienState = 0;
+int gmsgDecayName = 0;
+
 void LinkUserMessages( void )
 {
 	// Already taken care of?
@@ -234,6 +244,16 @@ void LinkUserMessages( void )
 
 	gmsgStatusText = REG_USER_MSG( "StatusText", -1 );
 	gmsgStatusValue = REG_USER_MSG( "StatusValue", 3 );
+
+	gmsgLensFlare = REG_USER_MSG( "LensFlare", 1 );
+	gmsgAimFrame = REG_USER_MSG( "AimFrame", 14 );
+	gmsgNotepad = REG_USER_MSG( "Notepad", -1 );
+	gmsgChangeMode = REG_USER_MSG( "ChangeMode", 1 );
+	gmsgChangePlr = REG_USER_MSG( "ChangePlr", 1 );
+	gmsgCamera = REG_USER_MSG( "Camera", 7 );
+	gmsgSparePlayer = REG_USER_MSG( "SparePlayer", 1 );
+	gmsgAlienState = REG_USER_MSG( "AlienState", 1 );
+	gmsgDecayName = REG_USER_MSG( "DecayName", 1 );
 }
 
 LINK_ENTITY_TO_CLASS( player, CBasePlayer )
