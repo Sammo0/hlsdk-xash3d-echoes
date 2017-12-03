@@ -2231,3 +2231,192 @@ void CItemSoda::CanTouch( CBaseEntity *pOther )
 	SetThink( &CBaseEntity::SUB_Remove );
 	pev->nextthink = gpGlobals->time;
 }
+
+//==================================================================
+//LRC- env_dlight; Dynamic Entity Light creator
+//==================================================================
+#define SF_DLIGHT_ONLYONCE 1
+#define SF_DLIGHT_STARTON  2
+class CEnvDLight : public CPointEntity
+{
+public:
+	void	Spawn( void );
+	virtual void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void	Think( void );
+	void	DesiredAction( void );
+	virtual void	MakeLight( float flTime );
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+	BOOL	GetState( void )
+	{
+		return ( pev->health == 0.0f && pev->nextthink > gpGlobals->time );
+	}
+
+	Vector m_vecPos;
+};
+
+LINK_ENTITY_TO_CLASS( env_dlight, CEnvDLight );
+
+TYPEDESCRIPTION	CEnvDLight::m_SaveData[] = 
+{
+	DEFINE_FIELD( CEnvDLight, m_vecPos, FIELD_VECTOR ),
+};
+
+IMPLEMENT_SAVERESTORE( CEnvDLight, CPointEntity );
+
+void CEnvDLight::Spawn()
+{
+	if( FStringNull( pev->targetname ) || pev->spawnflags & SF_DLIGHT_STARTON )
+	{
+		DesiredAction();
+	}
+}
+
+void CEnvDLight::DesiredAction()
+{
+	Use( this, this, USE_ON, 0 );
+}
+
+void CEnvDLight::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	float flTime;
+
+	if( !ShouldToggle( useType, GetState() ) )
+		return;
+
+	m_vecPos = pev->origin;
+
+	if( pev->health == 0.0f )
+	{
+		flTime = 10.0f;
+		pev->nextthink = gpGlobals->time + 1.0f;	
+	}
+	else if( pev->health <= 25.0f )
+	{
+		flTime = pev->health * 10.0f;
+	}
+	else
+	{
+		flTime = 25.0f;
+		pev->takedamage = 25.0f;
+		pev->nextthink = gpGlobals->time + 25.0f;
+	}
+
+	MakeLight( flTime );
+
+	if( pev->spawnflags & SF_DLIGHT_ONLYONCE )
+	{
+		SetThink( &CEnvDLight::SUB_Remove );
+		pev->nextthink = gpGlobals->time;
+	}
+}
+
+void CEnvDLight::MakeLight( float flTime )
+{
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_DLIGHT );
+		WRITE_COORD( m_vecPos.x );	// X
+		WRITE_COORD( m_vecPos.y );	// Y
+		WRITE_COORD( m_vecPos.z );	// Z
+		WRITE_BYTE( pev->renderamt );	// radius * 0.1
+		WRITE_BYTE( pev->rendercolor.x );		// r
+		WRITE_BYTE( pev->rendercolor.y );		// g
+		WRITE_BYTE( pev->rendercolor.z );		// b
+		WRITE_BYTE( flTime );	// time * 10
+		WRITE_BYTE( pev->frags );	// decay * 0.1
+	MESSAGE_END();
+}
+
+void CEnvDLight::Think( void )
+{
+	float flTime;
+
+	if( pev->health == 0.0f )
+	{
+		flTime = 10.0f;
+		pev->nextthink = gpGlobals->time + 1.0;
+	}
+	else
+	{
+		pev->takedamage += 25.0f;
+
+		if( pev->health <= pev->takedamage )
+		{
+			flTime = fabs( ( pev->health - pev->takedamage ) * 10.0f );
+			pev->takedamage = 0.0f;
+		}
+		else
+		{
+			flTime = 25.0f;
+			pev->nextthink = gpGlobals->time + 25.0f;
+		}
+	}
+	MakeLight( flTime );
+}
+
+//==================================================================
+//LRC- env_elight; Dynamic Entity Light creator
+//==================================================================
+class CEnvELight : public CEnvDLight
+{
+public:
+	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void	MakeLight(float flTime);
+	virtual int		Save( CSave &save );
+	virtual int		Restore( CRestore &restore );
+	static	TYPEDESCRIPTION m_SaveData[];
+
+	EHANDLE m_hAttach;
+};
+
+LINK_ENTITY_TO_CLASS( env_elight, CEnvELight );
+
+TYPEDESCRIPTION	CEnvELight::m_SaveData[] = 
+{
+	DEFINE_FIELD( CEnvELight, m_hAttach, FIELD_EHANDLE ),
+};
+
+IMPLEMENT_SAVERESTORE( CEnvELight, CEnvDLight );
+
+void CEnvELight::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( pev->target )
+	{
+		m_hAttach = UTIL_FindEntityByTargetname( NULL, STRING( pev->target ) );
+		if( m_hAttach == 0 )
+		{
+			ALERT( at_console, "env_elight \"%s\" can't find target %s\n", STRING( pev->targetname ), STRING( pev->target ) );
+			return; // error?
+		}
+	}
+	else
+	{
+		m_hAttach = this;
+	}
+
+	CEnvDLight::Use( pActivator, pCaller, useType, value );
+}
+
+void CEnvELight::MakeLight( float flTime )
+{
+	if( m_hAttach == 0 )
+	{
+		pev->takedamage = 0;
+		return;
+	}
+
+	MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
+		WRITE_BYTE( TE_ELIGHT );
+		WRITE_SHORT( m_hAttach->entindex( ) + 0x1000 * pev->impulse );		// entity, attachment
+		WRITE_COORD( m_vecPos.x );		// X
+		WRITE_COORD( m_vecPos.y );		// Y
+		WRITE_COORD( m_vecPos.z );		// Z
+		WRITE_COORD( pev->renderamt );		// radius * 0.1
+		WRITE_BYTE( pev->rendercolor.x );	// r
+		WRITE_BYTE( pev->rendercolor.y );	// g
+		WRITE_BYTE( pev->rendercolor.z );	// b
+		WRITE_BYTE( flTime );				// time * 10
+		WRITE_COORD( pev->frags );			// decay * 0.1
+	MESSAGE_END( );
+}
