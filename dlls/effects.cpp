@@ -2456,3 +2456,111 @@ void CEnvLensFlare::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 	MESSAGE_END();
 */
 }
+
+//==================================================================
+//LRC- Xen monsters' warp-in effect, for those too lazy to build it. :)
+//==================================================================
+#define SF_WARPBALL_ONLYONCE 1
+class CEnvWarpBall : public CBaseEntity
+{
+public:
+	void	Precache( void );
+	void	Spawn( void ) { Precache(); }
+	void	KeyValue( KeyValueData *pkvd );
+	void	Think( void );
+	void	Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	virtual int	ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+
+private:
+	string_t iWarpTarget;	
+};
+
+LINK_ENTITY_TO_CLASS( effect_warpball, CEnvWarpBall );
+
+void CEnvWarpBall::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "warp_target" ) )
+	{
+		iWarpTarget = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+	{
+		CBaseEntity::KeyValue( pkvd );
+	}
+}
+
+void CEnvWarpBall::Precache( void )
+{
+	PRECACHE_MODEL( "sprites/lgtning.spr" );
+	PRECACHE_MODEL( "sprites/Fexplo1.spr" );
+	PRECACHE_MODEL( "sprites/XFlare1.spr" );
+	PRECACHE_SOUND( "debris/beamstart2.wav" );
+	PRECACHE_SOUND( "debris/beamstart7.wav" );
+}
+
+void CEnvWarpBall::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	TraceResult tr;
+	Vector vecSrc, vecDest;
+	CBeam *pBeam;
+	CBaseEntity *pEntity;
+
+	pEntity = UTIL_FindEntityByTargetname( 0, STRING( iWarpTarget ) );
+
+	if( pEntity )
+	{
+		vecSrc = pEntity->pev->origin;
+		ALERT( at_console, "effect_warpball: playing at entity \"%s\" (%f %f %f)\n", STRING( iWarpTarget ), vecSrc.x, vecSrc.y, vecSrc.z );
+	}
+	else
+	{
+		vecSrc = pev->origin;
+	}
+
+	EMIT_SOUND( edict(), CHAN_BODY, "debris/beamstart7.wav", 1, ATTN_NORM );
+
+	for( int i = 1; i < 15; ++i )
+	{
+		vecDest = pev->health * 500.0f * ( Vector( RANDOM_FLOAT( -2.0f, 2.0f ), RANDOM_FLOAT( -2.0f, 2.0f ), RANDOM_FLOAT( -2.0f, 2.0f ) ).Normalize() );
+		UTIL_TraceLine( vecSrc, vecSrc + vecDest, ignore_monsters, NULL, &tr );
+		if( tr.flFraction != 1.0f )
+		{
+			// we hit something.
+			pBeam = CBeam::BeamCreate( "sprites/lgtning.spr", 200 );
+			pBeam->PointsInit( vecSrc, tr.vecEndPos );
+			pBeam->SetColor( 0, 255, 0 );
+			pBeam->SetNoise( 65 );
+			pBeam->SetBrightness( 150 );
+			pBeam->SetWidth( 18 );
+			pBeam->SetScrollRate( 35 );
+			pBeam->SetThink( &CBeam::SUB_Remove );
+			pBeam->pev->nextthink = gpGlobals->time + 1.0f;
+		}
+	}
+
+	EMIT_SOUND( edict(), CHAN_BODY, "debris/beamstart2.wav", 1, ATTN_NORM );
+	UTIL_ScreenShake( vecSrc, 4.0, 3.0, 1.0, 750.0 );
+	UTIL_MuzzleLight( vecSrc, 80, 255, 180, 96, 1, 0 );
+
+	CSprite *pSpr = CSprite::SpriteCreate( "sprites/Fexplo1.spr", vecSrc, TRUE );
+	pSpr->AnimateAndDie( 10 );
+	pSpr->SetTransparency( kRenderGlow,  77, 210, 130,  255, kRenderFxNoDissipation );
+
+	pSpr = CSprite::SpriteCreate( "sprites/XFlare1.spr", vecSrc, TRUE );
+	pSpr->AnimateAndDie( 10 );
+	pSpr->SetTransparency( kRenderGlow,  184, 250, 214,  255, kRenderFxNoDissipation );
+
+	pev->nextthink = gpGlobals->time + 2.0f;
+}
+
+void CEnvWarpBall::Think( void )
+{
+	EMIT_SOUND( edict(), CHAN_ITEM, "debris/beamstart7.wav", 1, ATTN_NORM );
+	SUB_UseTargets( this, USE_TOGGLE, 0);
+
+	if( pev->spawnflags & SF_WARPBALL_ONLYONCE )
+	{
+		UTIL_Remove( this );
+	}
+}
