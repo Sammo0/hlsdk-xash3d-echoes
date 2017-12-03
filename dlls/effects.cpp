@@ -2420,3 +2420,39 @@ void CEnvELight::MakeLight( float flTime )
 		WRITE_COORD( pev->frags );			// decay * 0.1
 	MESSAGE_END( );
 }
+
+//=========================================================
+// env_lensflare
+//=========================================================
+class CEnvLensFlare : public CPointEntity
+{
+public:
+	void Spawn( void );
+	void Precache( void );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+};
+
+void CEnvLensFlare::Precache( void )
+{
+	PRECACHE_MODEL( "models/uplant1.mdl" );	
+}        
+        
+LINK_ENTITY_TO_CLASS( env_lensflare, CEnvLensFlare )
+
+void CEnvLensFlare::Spawn( void )
+{
+	Precache();
+	SET_MODEL( ENT( pev ), "models/uplant1.mdl" );
+	pev->scale = 1.0f;
+	pev->rendermode = kRenderTransAdd;
+	pev->renderamt = 1;
+}
+
+void CEnvLensFlare::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+/*
+	MESSAGE_BEGIN( MSG_ALL, gmsgLensFlare );
+		WRITE_BYTE( );
+	MESSAGE_END();
+*/
+}
