@@ -27,6 +27,7 @@
 #define	SF_MONSTERMAKER_START_ON	1 // start active ( if has targetname )
 #define	SF_MONSTERMAKER_CYCLIC		4 // drop one monster every time fired.
 #define SF_MONSTERMAKER_MONSTERCLIP	8 // Children are blocked by monsterclip
+#define SF_MONSTERMAKER_WARPBALL	16
 
 //=========================================================
 // MonsterMaker - this ent creates monsters during the game.
@@ -49,29 +50,36 @@ public:
 	static TYPEDESCRIPTION m_SaveData[];
 	
 	string_t m_iszMonsterClassname;// classname of the monster(s) that will be created.
+	string_t m_iszWarpTarget;
 	
 	int m_cNumMonsters;// max number of monsters this ent can create
 	
 	int m_cLiveChildren;// how many monsters made by this monster maker that are currently alive
 	int m_iMaxLiveChildren;// max number of monsters that this maker may have out at one time.
+	int m_iMonsterSpawnFlags;
 
 	float m_flGround; // z coord of the ground under me, used to make sure no monsters are under the maker when it drops a new child
 
 	BOOL m_fActive;
 	BOOL m_fFadeChildren;// should we make the children fadeout?
+	BOOL m_fWarpball;
 };
 
 LINK_ENTITY_TO_CLASS( monstermaker, CMonsterMaker )
+LINK_ENTITY_TO_CLASS( env_warpball, CMonsterMaker )
 
 TYPEDESCRIPTION	CMonsterMaker::m_SaveData[] =
 {
 	DEFINE_FIELD( CMonsterMaker, m_iszMonsterClassname, FIELD_STRING ),
+	DEFINE_FIELD( CMonsterMaker, m_iszWarpTarget, FIELD_STRING ),
 	DEFINE_FIELD( CMonsterMaker, m_cNumMonsters, FIELD_INTEGER ),
 	DEFINE_FIELD( CMonsterMaker, m_cLiveChildren, FIELD_INTEGER ),
 	DEFINE_FIELD( CMonsterMaker, m_flGround, FIELD_FLOAT ),
 	DEFINE_FIELD( CMonsterMaker, m_iMaxLiveChildren, FIELD_INTEGER ),
+	DEFINE_FIELD( CMonsterMaker, m_iMonsterSpawnFlags, FIELD_INTEGER ),
 	DEFINE_FIELD( CMonsterMaker, m_fActive, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CMonsterMaker, m_fFadeChildren, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CMonsterMaker, m_fWarpball, FIELD_BOOLEAN ),
 };
 
 IMPLEMENT_SAVERESTORE( CMonsterMaker, CBaseMonster )
@@ -83,9 +91,17 @@ void CMonsterMaker::KeyValue( KeyValueData *pkvd )
 		m_cNumMonsters = atoi( pkvd->szValue );
 		pkvd->fHandled = TRUE;
 	}
-	else if( FStrEq( pkvd->szKeyName, "m_imaxlivechildren" ) )
+	else if( FStrEq( pkvd->szKeyName, "m_imaxlivechildren" ) 
+		|| FStrEq( pkvd->szKeyName, "maxlivechildren" ) )
 	{
 		m_iMaxLiveChildren = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "warptarget" )
+		|| FStrEq( pkvd->szKeyName, "makertarget" )
+		|| FStrEq( pkvd->szKeyName, "warp_target" ) )
+	{
+		m_iszWarpTarget = ALLOC_STRING( pkvd->szValue );
 		pkvd->fHandled = TRUE;
 	}
 	else if( FStrEq( pkvd->szKeyName, "monstertype" ) )
@@ -93,6 +109,11 @@ void CMonsterMaker::KeyValue( KeyValueData *pkvd )
 		m_iszMonsterClassname = ALLOC_STRING( pkvd->szValue );
 		pkvd->fHandled = TRUE;
 	}
+	else if( FStrEq( pkvd->szKeyName, "monsterspawnflags" ) )
+        {
+                m_iMonsterSpawnFlags = atoi( pkvd->szValue );
+                pkvd->fHandled = TRUE;
+        }
 	else
 		CBaseMonster::KeyValue( pkvd );
 }
@@ -100,9 +121,15 @@ void CMonsterMaker::KeyValue( KeyValueData *pkvd )
 void CMonsterMaker::Spawn()
 {
 	pev->solid = SOLID_NOT;
+	
+	m_fWarpball = FClassnameIs( pev, "env_warpball" );
 
 	m_cLiveChildren = 0;
 	Precache();
+	
+	if( m_fWarpball && FBitSet( pev->spawnflags, SF_MONSTERMAKER_START_ON ) )
+		pev->spawnflags |= SF_MONSTERMAKER_WARPBALL;
+
 	if( !FStringNull( pev->targetname ) )
 	{
 		if( pev->spawnflags & SF_MONSTERMAKER_CYCLIC )
@@ -114,7 +141,7 @@ void CMonsterMaker::Spawn()
 			SetUse( &CMonsterMaker::ToggleUse );// so can be turned on/off
 		}
 
-		if( FBitSet( pev->spawnflags, SF_MONSTERMAKER_START_ON ) )
+		if( !m_fWarpball && FBitSet( pev->spawnflags, SF_MONSTERMAKER_START_ON ) )
 		{
 			// start making monsters as soon as monstermaker spawns
 			m_fActive = TRUE;
@@ -151,7 +178,15 @@ void CMonsterMaker::Precache( void )
 {
 	CBaseMonster::Precache();
 
-	UTIL_PrecacheOther( STRING( m_iszMonsterClassname ) );
+	if( m_fWarpball )
+	{
+		m_flDelay = 5.0f;
+		UTIL_PrecacheOther( "effect_warpball" );
+	}
+	if( FStringNull( m_iszMonsterClassname ) )
+		ALERT( at_console, "CMonsterMaker without a children name!\n" );
+	else
+		UTIL_PrecacheOther( STRING( m_iszMonsterClassname ) );
 }
 
 //=========================================================
@@ -194,7 +229,7 @@ void CMonsterMaker::MakeMonster( void )
 
 	if( FNullEnt( pent ) )
 	{
-		ALERT ( at_console, "NULL Ent in MonsterMaker!\n" );
+		ALERT( at_console, "NULL Ent in MonsterMaker!\n" );
 		return;
 	}
 
@@ -231,6 +266,11 @@ void CMonsterMaker::MakeMonster( void )
 		// Disable this forever.  Don't kill it because it still gets death notices
 		SetThink( NULL );
 		SetUse( NULL );
+	}
+
+	if( !FBitSet( pev->spawnflags, SF_MONSTERMAKER_CYCLIC ) && FBitSet( pev->spawnflags, SF_MONSTERMAKER_WARPBALL ) )
+	{
+		UTIL_Remove( this );		
 	}
 }
 
