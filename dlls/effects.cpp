@@ -2232,6 +2232,67 @@ void CItemSoda::CanTouch( CBaseEntity *pOther )
 	pev->nextthink = gpGlobals->time;
 }
 
+//=================================================================
+// env_model: like env_sprite, except you can specify a sequence.
+//=================================================================
+class CEnvModel : public CBaseAnimating
+{
+public:
+	void Spawn( void );
+	void Precache( void );
+	void KeyValue( KeyValueData *pkvd );
+
+private:
+	int m_iSkin;
+	float m_flScale;
+	int m_iBody;
+	int m_iBodyGroup;
+};
+
+LINK_ENTITY_TO_CLASS( env_model, CEnvModel );
+
+void CEnvModel::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq(pkvd->szKeyName, "skin" ) )
+	{
+		m_iSkin = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "scale" ) )
+	{
+		m_flScale = atof( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "body" ) )
+	{
+		m_iBody = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "bodygroup" ) )
+	{
+		m_iBodyGroup = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+	{
+		CBaseAnimating::KeyValue( pkvd );
+	}
+}
+
+void CEnvModel::Spawn( void )
+{
+	Precache();
+	SET_MODEL( ENT( pev ), STRING( pev->model ) );
+	SetBodygroup( m_iBodyGroup, m_iBody );
+	pev->skin = m_iSkin;
+	pev->scale = m_flScale;
+}
+
+void CEnvModel::Precache( void )
+{
+	PRECACHE_MODEL( STRING( pev->model ) );
+}
+
 //==================================================================
 //LRC- env_dlight; Dynamic Entity Light creator
 //==================================================================
