@@ -2625,3 +2625,70 @@ void CEnvWarpBall::Think( void )
 		UTIL_Remove( this );
 	}
 }
+
+//==================================================================
+// env_rtcamera - Real-Time Camera
+//==================================================================
+extern int gmsgCamera;
+
+class CEnvRTCamera : public CPointEntity
+{
+public:
+	void ThinkOn();
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+
+private:
+	BOOL m_bActive;
+};
+
+LINK_ENTITY_TO_CLASS( env_rtcamera, CEnvRTCamera );
+
+TYPEDESCRIPTION CEnvRTCamera::m_SaveData[] =
+{
+        DEFINE_FIELD( CEnvRTCamera, m_bActive, FIELD_BOOLEAN ),
+};
+  
+IMPLEMENT_SAVERESTORE( CEnvRTCamera, CPointEntity );
+
+void CEnvRTCamera::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( useType == USE_TOGGLE )
+	{
+		m_bActive = !m_bActive;
+		if( m_bActive )
+		{
+			SetThink( &CEnvRTCamera::ThinkOn );
+			pev->nextthink = gpGlobals->time + 1.0f;
+		}
+		else
+		{
+			MESSAGE_BEGIN( MSG_BROADCAST, gmsgCamera );
+				WRITE_BYTE( 0 );
+				WRITE_COORD( 0 );
+				WRITE_COORD( 0 );
+				WRITE_COORD( 0 );
+			MESSAGE_END();
+
+			SetThink( NULL );
+		}
+	}
+
+	ALERT( at_console, "env_rtcamera called Use\n" );
+}
+
+void CEnvRTCamera::ThinkOn()
+{
+	ALERT( at_console, "env_rtcamera called ThinkOn\n" );
+
+	MESSAGE_BEGIN( MSG_BROADCAST, gmsgCamera );
+		WRITE_BYTE( 1 );
+		WRITE_COORD( pev->origin.x );
+		WRITE_COORD( pev->origin.y );
+		WRITE_COORD( pev->origin.z );
+	MESSAGE_END();
+
+	pev->nextthink = gpGlobals->time + 1.0f;
+}
