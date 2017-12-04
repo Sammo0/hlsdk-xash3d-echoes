@@ -2648,9 +2648,9 @@ LINK_ENTITY_TO_CLASS( env_rtcamera, CEnvRTCamera );
 
 TYPEDESCRIPTION CEnvRTCamera::m_SaveData[] =
 {
-        DEFINE_FIELD( CEnvRTCamera, m_bActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CEnvRTCamera, m_bActive, FIELD_BOOLEAN ),
 };
-  
+
 IMPLEMENT_SAVERESTORE( CEnvRTCamera, CPointEntity );
 
 void CEnvRTCamera::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
@@ -2691,4 +2691,146 @@ void CEnvRTCamera::ThinkOn()
 	MESSAGE_END();
 
 	pev->nextthink = gpGlobals->time + 1.0f;
+}
+
+//==================================================================
+// env_lasermirror
+//==================================================================
+#define SF_LASERMIRROR_STATEOFF  2
+class CEnvLaserMirror : public CBaseEntity
+{
+public:
+	void Precache();
+	void Spawn();
+	void KeyValue( KeyValueData *pkvd );
+	void Think();
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+
+private:
+	string_t m_iszActivatedTarget;
+	string_t m_iszSnoozedTarget;
+	BOOL m_bActive;
+	string_t m_iszGlobalState;
+	int m_iUseGlobalStateWhen;
+	int m_iSearchDistance;
+	BOOL m_bUsage;
+};
+
+LINK_ENTITY_TO_CLASS( env_lasermirror, CEnvLaserMirror );
+
+TYPEDESCRIPTION CEnvLaserMirror::m_SaveData[] =
+{
+	DEFINE_FIELD( CEnvLaserMirror, m_iszActivatedTarget, FIELD_STRING ),
+	DEFINE_FIELD( CEnvLaserMirror, m_iszSnoozedTarget, FIELD_STRING ),
+	DEFINE_FIELD( CEnvLaserMirror, m_bActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CEnvLaserMirror, m_iszGlobalState, FIELD_STRING ),
+	DEFINE_FIELD( CEnvLaserMirror, m_iUseGlobalStateWhen, FIELD_INTEGER ),
+	DEFINE_FIELD( CEnvLaserMirror, m_iSearchDistance, FIELD_INTEGER ),
+	DEFINE_FIELD( CEnvLaserMirror, m_bUsage, FIELD_BOOLEAN ),
+};
+
+IMPLEMENT_SAVERESTORE( CEnvLaserMirror, CBaseEntity )
+
+void CEnvLaserMirror::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "activated_target" ) )
+	{
+		m_iszActivatedTarget = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "snoozed_target" ) )
+	{
+		m_iszSnoozedTarget = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "globalstate" ) )
+	{
+		m_iszGlobalState = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "searchdistance" ) )
+	{
+		m_iSearchDistance = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "useglobalstatewhen" ) )
+	{
+		m_iUseGlobalStateWhen = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+	{
+		CBaseEntity::KeyValue( pkvd );
+	}
+}
+
+void CEnvLaserMirror::Precache()
+{
+	PRECACHE_MODEL( "models/uplant1.mdl" );
+}
+
+void CEnvLaserMirror::Spawn( void )
+{
+	Precache();
+	SET_MODEL( ENT( pev ), "models/uplant1.mdl" );
+	UTIL_SetSize( pev, Vector( 8.0f, 24.0f, 24.0f ), Vector( -24.0f, -24.0f, -8.0f ) );
+	pev->scale = 1.0f;
+	pev->solid = SOLID_BBOX;
+	pev->rendermode = kRenderTransAdd;
+	pev->renderamt = 1;
+	pev->takedamage = 0;
+	pev->flags |= FL_MONSTER;
+	pev->movetype = MOVETYPE_FLY;
+	m_bActive = TRUE;
+	m_bUsage = FALSE;
+	pev->nextthink = gpGlobals->time + 1.0f;
+}
+
+void CEnvLaserMirror::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( m_bActive )
+	{
+		m_bActive = FALSE;
+		pev->solid = SOLID_NOT;
+		UTIL_SetSize( pev, Vector( 1.0f, 1.0f, 1.0f ), Vector( -1.0f, -1.0f, -1.0f ) );
+	}
+	else
+	{
+		m_bActive = TRUE;
+		pev->solid = SOLID_BBOX;
+		UTIL_SetSize( pev, Vector( 8.0f, 24.0f, 24.0f ), Vector( -24.0f, -24.0f, -8.0f ) );
+	}
+
+	pev->nextthink = gpGlobals->time + 0.01f;
+}
+
+void CEnvLaserMirror::Think()
+{
+	if( m_iUseGlobalStateWhen != -1 && m_iszGlobalState )
+	{
+		if( gGlobalState.EntityGetState( m_iszGlobalState ) == m_iUseGlobalStateWhen )
+		{
+			if( !FBitSet( pev->spawnflags, SF_LASERMIRROR_STATEOFF ) || !m_bUsage )
+			{
+				FireTargets( STRING( m_iszActivatedTarget ), this, this, USE_TOGGLE, 0 );
+				m_bUsage = TRUE;
+			}
+		}
+		else if( !m_bActive )
+		{
+			FireTargets( STRING( m_iszSnoozedTarget ), this, this, USE_TOGGLE, 0 );
+		}
+	}
+	else if( m_bActive )
+	{
+		FireTargets( STRING( m_iszActivatedTarget ), this, this, USE_TOGGLE, 0 );
+	}
+	else
+	{
+		FireTargets( STRING( m_iszSnoozedTarget ), this, this, USE_TOGGLE, 0 );
+	}
 }
