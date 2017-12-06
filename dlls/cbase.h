@@ -350,6 +350,7 @@ public:
 
 	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
 	int m_fireState;
+	int DecayID;
 };
 
 // Ugly technique to override base member functions

@@ -2059,6 +2059,93 @@ void CTriggerPlayerFreeze::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, U
 		( (CBasePlayer *)pActivator )->EnableControl( FALSE );
 }
 
+#define SF_SPAWN_ONLYONCE	1
+#define SF_SPAWN_STARTOFF       256
+class CPlayerSpawnTrigger : public CBaseDelay
+{
+public:
+	void Spawn( void );
+	void KeyValue( KeyValueData *pkvd );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	int ObjectCaps( void ) { return CBaseEntity :: ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+	static TYPEDESCRIPTION m_SaveData[];
+
+private:
+	string_t m_szGlobalState;
+	int m_iPlayerIndex;
+	USE_TYPE triggerType;
+};
+
+LINK_ENTITY_TO_CLASS( trigger_clientspawn, CPlayerSpawnTrigger )
+
+// Global Savedata for changelevel friction modifier
+TYPEDESCRIPTION	CPlayerSpawnTrigger::m_SaveData[] =
+{
+	DEFINE_FIELD( CPlayerSpawnTrigger, m_szGlobalState, FIELD_STRING ),
+	DEFINE_FIELD( CPlayerSpawnTrigger, m_iPlayerIndex, FIELD_INTEGER ),
+	DEFINE_FIELD( CPlayerSpawnTrigger, triggerType, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CPlayerSpawnTrigger, CBaseDelay )
+
+void CPlayerSpawnTrigger::Spawn( void )
+{
+}
+
+void CPlayerSpawnTrigger::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "globalstate" ) )
+	{
+		m_szGlobalState = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "player_index" ) )
+	{
+		m_iPlayerIndex = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "triggerstate" ) )
+	{
+		int type = atoi( pkvd->szValue );
+                switch( type )
+		{
+		case 0:
+			triggerType = USE_OFF;
+			break;
+		case 2:
+			triggerType = USE_TOGGLE;
+			break;
+		default:
+			triggerType = USE_ON;
+			break;
+		}
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CBaseDelay::KeyValue( pkvd );
+}
+
+void CPlayerSpawnTrigger::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( !m_szGlobalState || gGlobalState.EntityGetState( m_szGlobalState ) == GLOBAL_ON )
+	{
+		if( !FBitSet( pev->spawnflags, SF_SPAWN_STARTOFF )
+			|| !pActivator
+			|| !pActivator->IsPlayer()
+			|| !m_iPlayerIndex
+			|| pActivator->DecayID == m_iPlayerIndex )
+		{
+			SUB_UseTargets( this, triggerType, 0 );
+
+			if( FBitSet( pev->spawnflags, SF_SPAWN_ONLYONCE ) )
+				UTIL_Remove( this );
+		}
+	}
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
