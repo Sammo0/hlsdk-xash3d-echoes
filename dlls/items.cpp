@@ -482,3 +482,102 @@ int CEyeScanner::Classify()
 {
 	return CLASS_NONE;
 }
+
+//==================================================================
+// item_slave_collar
+//==================================================================
+#define SF_COLLAR_STARTON	1
+
+#define MAX_COLLAR_BEAMS	2
+
+class CItemSlaveCollar : public CPointEntity
+{
+public:
+	void Spawn();
+	void Precache();
+	void EXPORT ZapThink();
+	void EXPORT OffThink();
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+
+private:
+	CBeam* m_pBeam[MAX_COLLAR_BEAMS];
+	int m_iBeams;
+	BOOL m_bActive;
+};
+
+TYPEDESCRIPTION CItemSlaveCollar::m_SaveData[] =
+{
+	DEFINE_FIELD( CItemSlaveCollar, m_bActive, FIELD_BOOLEAN ),
+	DEFINE_ARRAY( CItemSlaveCollar, m_pBeam, FIELD_CLASSPTR, MAX_COLLAR_BEAMS ),
+};
+
+IMPLEMENT_SAVERESTORE( CItemSlaveCollar, CPointEntity )
+
+LINK_ENTITY_TO_CLASS( item_slave_collar, CItemSlaveCollar )
+
+void CItemSlaveCollar::Spawn()
+{
+	Precache();
+	SET_MODEL( ENT( pev ), "models/collar_test.mdl" );
+
+	for( m_iBeams = 0; m_iBeams < MAX_COLLAR_BEAMS; ++m_iBeams );
+		m_pBeam[m_iBeams] = CBeam::BeamCreate( "sprites/lgtning.spr", 50 );
+
+	if( FBitSet( pev->spawnflags, SF_COLLAR_STARTON ) )
+	{
+		SetThink( &CItemSlaveCollar::ZapThink );
+		pev->nextthink = gpGlobals->time;
+	}
+}
+
+void CItemSlaveCollar::Precache()
+{
+	PRECACHE_MODEL( "models/collar_test.mdl" );
+	PRECACHE_MODEL( "sprites/lgtning.spr" );
+	PRECACHE_SOUND( "weapons/electro4.wav" );
+	PRECACHE_SOUND( "debris/zap4.wav" );
+}
+
+void CItemSlaveCollar::ZapThink()
+{
+	/*
+	TraceResult tr;
+	UTIL_EmitAmbientSound( ENT(pev), tr.vecEndPos, "debris/zap4.wav", 0.5, ATTN_NORM, 0, RANDOM_LONG( 140, 160 ) );
+	UTIL_Sparks( 50 );
+	DecalGunshot( &m_trHit, BULLET_PLAYER_CROWBAR );
+	UTIL_EmitAmbientSound( ENT(pev), tr.vecEndPos, "weapons/electro4.wav", 0.5, ATTN_NORM, 0, RANDOM_LONG( 140, 160 ) );
+	*/
+	pev->nextthink = gpGlobals->time + 5.0f;
+}
+
+void CItemSlaveCollar::OffThink()
+{
+	for( m_iBeams = 0; m_iBeams < MAX_COLLAR_BEAMS; ++m_iBeams );
+		SetBits( m_pBeam[m_iBeams]->pev->effects, EF_NODRAW ); 
+}
+
+void CItemSlaveCollar::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( useType == USE_TOGGLE )
+	{
+		m_bActive = !m_bActive;
+	}
+	else if( useType == USE_ON )
+	{
+		m_bActive = TRUE;
+	}
+	else if( useType == USE_OFF )
+	{
+		m_bActive = FALSE;
+	}
+
+	if( m_bActive )
+		SetThink( &CItemSlaveCollar::ZapThink );
+	else
+		SetThink( &CItemSlaveCollar::OffThink );
+	pev->nextthink = gpGlobals->time + 0.01f;
+}
