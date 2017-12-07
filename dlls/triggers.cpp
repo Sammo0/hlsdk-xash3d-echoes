@@ -2136,7 +2136,7 @@ void CPlayerSpawnTrigger::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, US
 			|| !pActivator
 			|| !pActivator->IsPlayer()
 			|| !m_iPlayerIndex
-			|| pActivator->DecayID == m_iPlayerIndex )
+			|| pActivator->m_iDecay == m_iPlayerIndex )
 		{
 			SUB_UseTargets( this, triggerType, 0 );
 

@@ -33,6 +33,7 @@ extern DLL_GLOBAL BOOL g_fGameOver;
 extern int gmsgDeathMsg;	// client dll messages
 extern int gmsgMOTD;
 
+extern BOOL g_bIsDecayGame;
 int g_teamplay = 0;
 
 //=========================================================
@@ -311,8 +312,14 @@ CGameRules *InstallGameRules( void )
 {
 	SERVER_COMMAND( "exec game.cfg\n" );
 	SERVER_EXECUTE();
+	ALERT( at_console, "Installing game rule...\n" );
 
-	if( !gpGlobals->deathmatch )
+	if( g_bIsDecayGame )
+	{
+		return new CHalfLifeRules;
+		//return new CDecayRules;
+	}
+	else if( !gpGlobals->deathmatch )
 	{
 		// generic half-life
 		g_teamplay = 0;

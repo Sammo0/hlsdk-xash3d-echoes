@@ -161,4 +161,23 @@ inline void *GET_PRIVATE( edict_t *pent )
 
 #define PLAYER_CNX_STATS		( *g_engfuncs.pfnGetPlayerStats )
 
+inline edict_t *CREATE_FAKE_CLIENT( const char *netname )
+{
+	return (*g_engfuncs.pfnCreateFakeClient)( netname );
+}
+
+inline char *GET_INFOBUFFER( edict_t *e )
+{
+	return (*g_engfuncs.pfnGetInfoKeyBuffer)( e );
+}
+
+inline char *GET_INFO_KEY_VALUE( const char *infobuffer, const char *key )
+{
+	return (g_engfuncs.pfnInfoKeyValue( infobuffer, key ) );
+}
+
+inline void SET_CLIENT_KEY_VALUE( int clientIndex, const char *infobuffer, const char *key, const char *value )
+{
+	(*g_engfuncs.pfnSetClientKeyValue)( clientIndex, infobuffer, key, value );
+}
 #endif		//ENGINECALLBACK_H

@@ -63,6 +63,7 @@ extern void CopyToBodyQue( entvars_t* pev );
 extern int giPrecacheGrunt;
 extern int gmsgSayText;
 extern int gmsgBhopcap;
+extern BOOL g_bIsSlaveCoOp;
 
 extern cvar_t allow_spectators;
 
@@ -532,6 +533,44 @@ void ClientCommand( edict_t *pEntity )
 	{
 		Host_Say( pEntity, 1 );
 	}
+	else if( FStrEq( pcmd, "changeplayer" ) )
+	{
+		if( g_pGameRules->IsCoOp() )
+		{
+			
+		}
+	}
+	else if( FStrEq( pcmd, "changeplayer2" ) )
+	{
+		if( g_pGameRules->IsCoOp() )
+		{ 
+			CBasePlayer *pPlayer = GetClassPtr( (CBasePlayer *)pev );
+			pPlayer->m_iDecay = ( pPlayer->m_iDecay == 1 ) ? 2 : 1;
+			ALERT( at_console, "Player 1 index changed to %d\n", pPlayer->m_iDecay );
+		}
+	}
+	else if( FStrEq( pcmd, "euukraine" ) )
+	{
+		if( g_pGameRules->IsCoOp() )
+		{
+			if( FStrEq( CMD_ARGV( 1 ), "visafree" ) )
+			{
+				// Unlock alien campaign
+			}
+		}
+	}
+	else if( FStrEq( pcmd, "test1" ) )
+	{
+		MESSAGE_BEGIN( MSG_ALL, SVC_INTERMISSION );
+		MESSAGE_END();
+	}
+	else if( FStrEq( pcmd, "stripall" ) )
+	{
+		if( g_pGameRules->IsCoOp() )
+		{
+			GetClassPtr( (CBasePlayer *)pev )->PackDeadPlayerItems();
+		}
+	}
 	else if( FStrEq( pcmd, "fullupdate" ) )
 	{
 		GetClassPtr( (CBasePlayer *)pev )->ForceClientDllUpdate(); 
@@ -654,7 +693,10 @@ void ClientCommand( edict_t *pEntity )
 		if( !IS_DEDICATED_SERVER() )
 		{
 			// If user types "addbot" in console, add a bot with skin and name
-			BotCreate( CMD_ARGV( 1 ), CMD_ARGV( 2 ), CMD_ARGV( 3 ) );
+			if( g_bIsSlaveCoOp )
+				BotCreate( "player/dm_slave/dm_slave", "R-4913", 0 );
+			else
+				BotCreate( "ginacol", "Colette", 0 );// TODO: Give normal bodygroups/skins/names for bots.
 		}
 		else
 			CLIENT_PRINTF( pEntity, print_console, "addbot not allowed from client!\n" );

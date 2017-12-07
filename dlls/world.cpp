@@ -450,6 +450,9 @@ LINK_ENTITY_TO_CLASS( worldspawn, CWorld )
 #define SF_WORLD_FORCETEAM	0x0004		// Force teams
 
 extern DLL_GLOBAL BOOL		g_fGameOver;
+int g_iStartSuit = 0;
+BOOL g_bIsSlaveCoOp = FALSE;
+BOOL g_bIsDecayGame = FALSE;
 float g_flWeaponCheat; 
 
 void CWorld::Spawn( void )
@@ -475,6 +478,13 @@ void CWorld::Precache( void )
 	{
 		delete g_pGameRules;
 		g_pGameRules = NULL;
+	}
+
+	if( g_bIsDecayGame )
+	{
+		g_bIsSlaveCoOp = m_bIsSlaveCoOp;
+		if( !CBaseEntity::Create( "trigger_autobot", g_vecZero, g_vecZero, NULL ) );
+			ALERT( at_aiconsole, "Autobot entity was not created!\n" );
 	}
 
 	g_pGameRules = InstallGameRules();
@@ -727,6 +737,21 @@ void CWorld::KeyValue( KeyValueData *pkvd )
 		{
 			pev->spawnflags |= SF_WORLD_FORCETEAM;
 		}
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "startsuit" ) )
+	{
+		g_iStartSuit = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "decay" ) )
+	{
+		g_bIsDecayGame = ( atoi( pkvd->szValue ) != 0 );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "slavecoop" ) )
+	{
+		m_bIsSlaveCoOp = ( atoi( pkvd->szValue ) != 0 );
 		pkvd->fHandled = TRUE;
 	}
 	else

@@ -350,7 +350,7 @@ public:
 
 	enum EGON_FIRESTATE { FIRE_OFF, FIRE_CHARGE };
 	int m_fireState;
-	int DecayID;
+	int m_iDecay;
 };
 
 // Ugly technique to override base member functions
@@ -782,5 +782,8 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void KeyValue( KeyValueData *pkvd );
+
+private:
+	BOOL m_bIsSlaveCoOp;
 };
 #endif
