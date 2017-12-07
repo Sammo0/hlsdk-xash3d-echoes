@@ -441,13 +441,19 @@ Activity CScientist::GetStoppedActivity( void )
 
 void CScientist::StartTask( Task_t *pTask )
 {
+	const char *pszSentence;
+
 	switch( pTask->iTask )
 	{
 	case TASK_SAY_HEAL:
 		//if( FOkToSpeak() )
 		Talk( 2 );
 		m_hTalkTarget = m_hTargetEnt;
-		PlaySentence( "SC_HEAL", 2, VOL_NORM, ATTN_IDLE );
+		if( FClassnameIs( pev, "monster_rosenberg" ) )
+			pszSentence = "RO_HEAL";
+		else
+			pszSentence = "SC_HEAL";
+		PlaySentence( pszSentence, 2, VOL_NORM, ATTN_IDLE );
 		TaskComplete();
 		break;
 	case TASK_SCREAM:
@@ -468,9 +474,24 @@ void CScientist::StartTask( Task_t *pTask )
 			//The enemy can be null here. - Solokiller
 			//Discovered while testing the barnacle grapple on headcrabs with scientists in view.
 			if( m_hEnemy != 0 && m_hEnemy->IsPlayer() )
-				PlaySentence( "SC_PLFEAR", 5, VOL_NORM, ATTN_NORM );
+			{
+				if( FClassnameIs( pev, "monster_rosenberg" ) )
+					pszSentence = "RO_PLFEAR";
+				else if( FClassnameIs( pev, "monster_wheelchair" ) )
+					pszSentence = "DK_PLFEAR";
+				else
+					pszSentence = "SC_PLFEAR";
+			}
 			else
-				PlaySentence( "SC_FEAR", 5, VOL_NORM, ATTN_NORM );
+			{
+				if( FClassnameIs( pev, "monster_rosenberg" ) )
+					pszSentence = "RO_FEAR";
+				else if( FClassnameIs( pev, "monster_wheelchair" ) )
+					pszSentence = "DK_FEAR";
+				else
+					pszSentence = "SC_FEAR";
+			}
+			PlaySentence( pszSentence, 5, VOL_NORM, ATTN_NORM );
 		}
 		TaskComplete();
 		break;
@@ -637,15 +658,24 @@ void CScientist::HandleAnimEvent( MonsterEvent_t *pEvent )
 //=========================================================
 void CScientist::Spawn( void )
 {
+	const char *pszModel;
 	Precache();
 
-	SET_MODEL( ENT( pev ), "models/scientist.mdl" );
+	if( FClassnameIs( pev, "monster_rosenberg" ) )
+		pszModel = "models/scientist_rosenberg.mdl";
+	else if( FClassnameIs( pev, "monster_wheelchair" ) )
+		pszModel = "models/wheelchair_sci.mdl";
+	else
+		pszModel = "models/scientist.mdl";
+	SET_MODEL( ENT( pev ), pszModel );
 	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX );
 
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
 	pev->health = gSkillData.scientistHealth;
+	if( FClassnameIs( pev, "monster_rosenberg" ) )
+		pev->health += 10;
 	pev->view_ofs = Vector( 0, 0, 50 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView = VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so scientists will notice player and say hello
 	m_MonsterState = MONSTERSTATE_NONE;
@@ -676,12 +706,42 @@ void CScientist::Spawn( void )
 //=========================================================
 void CScientist::Precache( void )
 {
-	PRECACHE_MODEL( "models/scientist.mdl" );
-	PRECACHE_SOUND( "scientist/sci_pain1.wav" );
-	PRECACHE_SOUND( "scientist/sci_pain2.wav" );
-	PRECACHE_SOUND( "scientist/sci_pain3.wav" );
-	PRECACHE_SOUND( "scientist/sci_pain4.wav" );
-	PRECACHE_SOUND( "scientist/sci_pain5.wav" );
+	if( FClassnameIs( pev, "monster_rosenberg" ) )
+	{
+		PRECACHE_MODEL( "models/scientist_rosenberg.mdl" );
+		PRECACHE_SOUND( "rosenberg/ro_pain0.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain1.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain2.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain3.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain4.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain5.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain6.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain7.wav" );
+		PRECACHE_SOUND( "rosenberg/ro_pain8.wav" );
+	}
+	else if( FClassnameIs( pev, "monster_wheelchair" ) )
+	{
+		PRECACHE_MODEL( "models/wheelchair_sci.mdl" );
+		PRECACHE_SOUND( "keller/dk_pain1.wav" );
+		PRECACHE_SOUND( "keller/dk_pain2.wav" );
+		PRECACHE_SOUND( "keller/dk_pain3.wav" );
+		PRECACHE_SOUND( "keller/dk_pain4.wav" );
+		PRECACHE_SOUND( "keller/dk_pain5.wav" );
+		PRECACHE_SOUND( "keller/dk_pain6.wav" );
+		PRECACHE_SOUND( "keller/dk_pain7.wav" );
+		PRECACHE_SOUND( "wheelchair/wheelchair_jog.wav" );
+		PRECACHE_SOUND( "wheelchair/wheelchair_run.wav" );
+		PRECACHE_SOUND( "wheelchair/wheelchair_walk.wav" );
+	}
+	else
+	{
+		PRECACHE_MODEL( "models/scientist.mdl" );
+		PRECACHE_SOUND( "scientist/sci_pain1.wav" );
+		PRECACHE_SOUND( "scientist/sci_pain2.wav" );
+		PRECACHE_SOUND( "scientist/sci_pain3.wav" );
+		PRECACHE_SOUND( "scientist/sci_pain4.wav" );
+		PRECACHE_SOUND( "scientist/sci_pain5.wav" );
+	}
 
 	// every new scientist must call this, otherwise
 	// when a level is loaded, nobody will talk (time is reset to 0)
@@ -702,45 +762,100 @@ void CScientist::TalkInit()
 	m_szFriends[2] = "monster_barney";
 
 	// scientists speach group names (group names are in sentences.txt)
-
-	m_szGrp[TLK_ANSWER] = "SC_ANSWER";
-	m_szGrp[TLK_QUESTION] = "SC_QUESTION";
-	m_szGrp[TLK_IDLE] = "SC_IDLE";
-	m_szGrp[TLK_STARE] = "SC_STARE";
-	m_szGrp[TLK_USE] = "SC_OK";
-	m_szGrp[TLK_UNUSE] = "SC_WAIT";
-	m_szGrp[TLK_STOP] = "SC_STOP";
-	m_szGrp[TLK_NOSHOOT] = "SC_SCARED";
-	m_szGrp[TLK_HELLO] = "SC_HELLO";
-
-	m_szGrp[TLK_PLHURT1] = "!SC_CUREA";
-	m_szGrp[TLK_PLHURT2] = "!SC_CUREB"; 
-	m_szGrp[TLK_PLHURT3] = "!SC_CUREC";
-
-	m_szGrp[TLK_PHELLO] = "SC_PHELLO";
-	m_szGrp[TLK_PIDLE] = "SC_PIDLE";
-	m_szGrp[TLK_PQUESTION] = "SC_PQUEST";
-	m_szGrp[TLK_SMELL] = "SC_SMELL";
-
-	m_szGrp[TLK_WOUND] = "SC_WOUND";
-	m_szGrp[TLK_MORTAL] = "SC_MORTAL";
-
-	// get voice for head
-	switch( pev->body % 3 )
+	if( FClassnameIs( pev, "monster_rosenberg" ) )
 	{
-	default:
-	case HEAD_GLASSES:
-		m_voicePitch = 105;
-		break;	//glasses
-	case HEAD_EINSTEIN:
+		m_szGrp[TLK_ANSWER] = "";
+		m_szGrp[TLK_QUESTION] = "";
+		m_szGrp[TLK_IDLE] = "";
+		m_szGrp[TLK_STARE] = "";
+		m_szGrp[TLK_USE] = "RO_OK";
+		m_szGrp[TLK_UNUSE] = "RO_WAIT";
+		m_szGrp[TLK_STOP] = "RO_STOP";
+		m_szGrp[TLK_NOSHOOT] = "RO_SCARED";
+
+		m_szGrp[TLK_PLHURT1] = "!RO_CUREA";
+		m_szGrp[TLK_PLHURT2] = "!RO_CUREB";
+		m_szGrp[TLK_PLHURT3] = "!RO_CUREC";
+
+		m_szGrp[TLK_PHELLO] = "";
+		m_szGrp[TLK_PIDLE] = "";
+		m_szGrp[TLK_PQUESTION] = "";
+		m_szGrp[TLK_SMELL] = "";
+
+		m_szGrp[TLK_WOUND] = "RO_WOUND";
+		m_szGrp[TLK_MORTAL] = "RO_MORTAL";
+
+		// get voice for head
 		m_voicePitch = 100;
-		break;	//einstein
-	case HEAD_LUTHER:
-		m_voicePitch = 95;
-		break;	//luther
-	case HEAD_SLICK:
+	}
+	else if( FClassnameIs( pev, "monster_wheelchair" ) )
+	{
+		m_szGrp[TLK_ANSWER] = "";
+		m_szGrp[TLK_QUESTION] = "";
+		m_szGrp[TLK_IDLE] = "DK_IDLE";
+		m_szGrp[TLK_STARE] = "DK_STARE";
+		m_szGrp[TLK_USE] = "DK_OK";
+		m_szGrp[TLK_UNUSE] = "DK_WAIT";
+		m_szGrp[TLK_STOP] = "DK_STOP";
+		m_szGrp[TLK_NOSHOOT] = "DK_SCARED";
+		m_szGrp[TLK_HELLO] = "DK_HELLO";
+
+		m_szGrp[TLK_PLHURT1] = "";
+		m_szGrp[TLK_PLHURT2] = "";
+		m_szGrp[TLK_PLHURT3] = "";
+
+		m_szGrp[TLK_PHELLO] = "";
+		m_szGrp[TLK_PIDLE] = "";
+		m_szGrp[TLK_PQUESTION] = "";
+		m_szGrp[TLK_SMELL] = "";
+
+		m_szGrp[TLK_WOUND] = "";
+		m_szGrp[TLK_MORTAL] = "";
+
+		// get voice for head
 		m_voicePitch = 100;
-		break;	//slick
+	}
+	else
+	{
+		m_szGrp[TLK_ANSWER] = "SC_ANSWER";
+		m_szGrp[TLK_QUESTION] = "SC_QUESTION";
+		m_szGrp[TLK_IDLE] = "SC_IDLE";
+		m_szGrp[TLK_STARE] = "SC_STARE";
+		m_szGrp[TLK_USE] = "SC_OK";
+		m_szGrp[TLK_UNUSE] = "SC_WAIT";
+		m_szGrp[TLK_STOP] = "SC_STOP";
+		m_szGrp[TLK_NOSHOOT] = "SC_SCARED";
+		m_szGrp[TLK_HELLO] = "SC_HELLO";
+
+		m_szGrp[TLK_PLHURT1] = "!SC_CUREA";
+		m_szGrp[TLK_PLHURT2] = "!SC_CUREB"; 
+		m_szGrp[TLK_PLHURT3] = "!SC_CUREC";
+
+		m_szGrp[TLK_PHELLO] = "SC_PHELLO";
+		m_szGrp[TLK_PIDLE] = "SC_PIDLE";
+		m_szGrp[TLK_PQUESTION] = "SC_PQUEST";
+		m_szGrp[TLK_SMELL] = "SC_SMELL";
+
+		m_szGrp[TLK_WOUND] = "SC_WOUND";
+		m_szGrp[TLK_MORTAL] = "SC_MORTAL";	
+
+		// get voice for head
+		switch( pev->body % 3 )
+		{
+		default:
+		case HEAD_GLASSES:
+			m_voicePitch = 105;
+			break;	//glasses
+		case HEAD_EINSTEIN:
+			m_voicePitch = 100;
+			break;	//einstein
+		case HEAD_LUTHER:
+			m_voicePitch = 95;
+			break;	//luther
+		case HEAD_SLICK:
+			m_voicePitch = 100;
+			break;	//slick
+		}
 	}
 }
 
@@ -774,29 +889,95 @@ int CScientist::ISoundMask( void )
 //=========================================================
 void CScientist::PainSound( void )
 {
+	const char *pszSound;
+
 	if( gpGlobals->time < m_painTime )
 		return;
 
 	m_painTime = gpGlobals->time + RANDOM_FLOAT( 0.5, 0.75 );
 
-	switch( RANDOM_LONG( 0, 4 ) )
+	if( FClassnameIs( pev, "monster_rosenberg" ) )
 	{
-	case 0:
-		EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "scientist/sci_pain1.wav", 1, ATTN_NORM, 0, GetVoicePitch() );
-		break;
-	case 1:
-		EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "scientist/sci_pain2.wav", 1, ATTN_NORM, 0, GetVoicePitch() );
-		break;
-	case 2:
-		EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "scientist/sci_pain3.wav", 1, ATTN_NORM, 0, GetVoicePitch() );
-		break;
-	case 3:
-		EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "scientist/sci_pain4.wav", 1, ATTN_NORM, 0, GetVoicePitch() );
-		break;
-	case 4:
-		EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "scientist/sci_pain5.wav", 1, ATTN_NORM, 0, GetVoicePitch() );
-		break;
+		switch( RANDOM_LONG( 0, 8 ) )
+		{
+		case 0:
+			pszSound = "rosenberg/ro_pain0.wav";
+			break;
+		case 1:
+			pszSound = "rosenberg/ro_pain1.wav";
+			break;
+		case 2:
+			pszSound = "rosenberg/ro_pain2.wav";
+			break;
+		case 3:
+			pszSound = "rosenberg/ro_pain3.wav";
+			break;
+		case 4:
+			pszSound = "rosenberg/ro_pain4.wav";
+			break;
+		case 5:
+			pszSound = "rosenberg/ro_pain5.wav";
+			break;
+		case 6:
+			pszSound = "rosenberg/ro_pain6.wav";
+			break;
+		case 7:
+			pszSound = "rosenberg/ro_pain7.wav";
+			break;
+		case 8:
+			pszSound = "rosenberg/ro_pain8.wav";
+			break;
+		}
 	}
+	else if( FClassnameIs( pev, "monster_wheelchair" ) )
+	{
+		switch( RANDOM_LONG( 0, 6 ) )
+		{
+		case 0:
+			pszSound = "keller/dk_pain1.wav";
+			break;
+		case 1:
+			pszSound = "keller/dk_pain2.wav";
+			break;
+		case 2:
+			pszSound = "keller/dk_pain3.wav";
+			break;
+		case 3:
+			pszSound = "keller/dk_pain4.wav";
+			break;
+		case 4:
+			pszSound = "keller/dk_pain5.wav";
+			break;
+		case 5:
+			pszSound = "keller/dk_pain6.wav";
+			break;
+		case 6:
+			pszSound = "keller/dk_pain7.wav";
+			break;
+		}
+	}
+	else
+	{
+		switch( RANDOM_LONG( 0, 4 ) )
+		{
+		case 0:
+			pszSound = "scientist/sci_pain1.wav";
+			break;
+		case 1:
+			pszSound = "scientist/sci_pain2.wav";
+			break;
+		case 2:
+			pszSound = "scientist/sci_pain3.wav";
+			break;
+		case 3:
+			pszSound = "scientist/sci_pain4.wav";
+			break;
+		case 4:
+			pszSound = "scientist/sci_pain5.wav";
+			break;
+		}
+	}
+	EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, pszSound, 1, ATTN_NORM, 0, GetVoicePitch() );
 }
 
 //=========================================================
@@ -1056,6 +1237,9 @@ BOOL CScientist::CanHeal( void )
 	if( ( m_healTime > gpGlobals->time ) || ( m_hTargetEnt == 0 ) || ( m_hTargetEnt->pev->health > ( m_hTargetEnt->pev->max_health * 0.5 ) ) )
 		return FALSE;
 
+	if( FClassnameIs( pev, "monster_wheelchair" ) )
+		return FALSE;
+	
 	return TRUE;
 }
 
