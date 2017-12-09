@@ -78,6 +78,7 @@ public:
 #define	WEAPON_SATCHEL			14
 #define	WEAPON_SNARK			15
 #define WEAPON_DISPLACER		16
+#define WEAPON_VORTIHANDS		17
 
 #define WEAPON_ALLWEAPONS		(~(1<<WEAPON_SUIT))
 
@@ -103,6 +104,7 @@ public:
 #define SATCHEL_WEIGHT		-10
 #define TRIPMINE_WEIGHT		-10
 #define DISPLACER_WEIGHT		20
+#define VORTIHANDS_WEIGHT		0
 
 // weapon clip/carry ammo capacities
 #define URANIUM_MAX_CARRY		100
@@ -1050,5 +1052,51 @@ public:
 private:
 	CBeam *m_pBeam[3];
 	int m_iFireMode;
+};
+
+class CVortiHands : public CBasePlayerWeapon
+{
+public:
+#ifndef CLIENT_DLL
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+#endif
+	void Spawn( void );
+	void Precache( void );
+	int iItemSlot( void ) { return 1; }
+	void EXPORT SwingAgain( void );
+	void EXPORT Smack( void );
+	int GetItemInfo( ItemInfo *p );
+	int AddToPlayer( CBasePlayer *pPlayer );
+	void CrosshairState( int state );
+
+	void PrimaryAttack( void );
+	void SecondaryAttack( void );
+	int Swing( int fFirst );
+	BOOL Deploy( void );
+	void Holster( int skiplocal = 0 );
+	void WeaponIdle();
+
+	float GetFullChargeTime( void );
+	void StartFire( void );
+	void Fire( Vector vecOrigSrc, Vector vecDirShooting, float flDamage );
+
+	int m_iSwing;
+	int m_iSoundState;
+	TraceResult m_trHit;
+
+	virtual BOOL UseDecrement( void )
+	{ 
+#if defined( CLIENT_WEAPONS )
+		return TRUE;
+#else
+		return FALSE;
+#endif
+	}
+private:
+	unsigned short m_usVorti;
+	unsigned short m_usVortiFire;
+	unsigned short m_usVortiSpin;
 };
 #endif // WEAPONS_H

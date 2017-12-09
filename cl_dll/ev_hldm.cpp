@@ -68,6 +68,9 @@ void EV_EgonStop( struct event_args_s *args );
 void EV_HornetGunFire( struct event_args_s *args );
 void EV_TripmineFire( struct event_args_s *args );
 void EV_SnarkFire( struct event_args_s *args );
+void EV_VortiHands( struct event_args_s *args );
+void EV_VortiSpin( struct event_args_s *args );
+void EV_VortiFire( struct event_args_s *args );
 
 void EV_TrainPitchAdjust( struct event_args_s *args );
 }
@@ -1688,6 +1691,225 @@ void EV_SnarkFire( event_args_t *args )
 }
 //======================
 //	   SQUEAK END
+//======================
+
+//======================
+//	VORTIHANDS START
+//======================
+enum vortihands_e
+{
+	VORTIHANDS_IDLE1 = 0,
+	VORTIHANDS_IDLE2,
+	VORTIHANDS_ATTACK1HIT,
+	VORTIHANDS_ATTACK1MISS,
+	VORTIHANDS_ATTACK2MISS,
+	VORTIHANDS_ATTACK2HIT,
+	VORTIHANDS_ATTACK3MISS,
+	VORTIHANDS_ATTACK3HIT,
+	VORTIHANDS_CHARGE,
+	VORTIHANDS_CHARGE_LOOP,
+	VORTIHANDS_ZAP,
+	VORTIHANDS_RETURN
+};
+
+//Only predict the miss sounds, hit sounds are still played 
+//server side, so players don't get the wrong idea.
+void EV_VortiHands( event_args_t *args )
+{
+	int idx, iAnim;
+	vec3_t origin;
+	vec3_t angles;
+	vec3_t velocity;
+
+	idx = args->entindex;
+	VectorCopy( args->origin, origin );
+	
+	//Play Swing sound
+	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "zombie/claw_miss1.wav", 1, ATTN_NORM, 0, PITCH_NORM ); 
+
+	if( EV_IsLocal( idx ) )
+	{
+		switch( (g_iSwing++) % 3 )
+		{
+			case 0:
+				iAnim = VORTIHANDS_ATTACK1MISS;
+				break;
+			case 1:
+				iAnim = VORTIHANDS_ATTACK2MISS;
+				break;
+			case 2:
+				iAnim = VORTIHANDS_ATTACK3MISS;
+				break;
+		}
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( iAnim, 1 );
+	}
+}
+
+void EV_VortiSpin( event_args_t *args )
+{
+	int idx;
+	vec3_t origin;
+	vec3_t angles;
+	vec3_t velocity;
+	int iSoundState = 0;
+
+	int pitch;
+
+	idx = args->entindex;
+	VectorCopy( args->origin, origin );
+	VectorCopy( args->angles, angles );
+	VectorCopy( args->velocity, velocity );
+
+	pitch = args->iparam1;
+
+	iSoundState = args->bparam1 ? SND_CHANGE_PITCH : 0;
+
+	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "debris/zap1.wav", 1.0, ATTN_NORM, iSoundState, pitch );
+}
+
+/*
+==============================
+EV_StopPreviousGauss
+
+==============================
+*/
+void EV_StopPreviousVorti( int idx )
+{
+	// Make sure we don't have a gauss spin event in the queue for this guy
+	gEngfuncs.pEventAPI->EV_KillEvents( idx, "events/vortispin.sc" );
+	gEngfuncs.pEventAPI->EV_StopSound( idx, CHAN_WEAPON, "debris/zap1.wav" );
+}
+
+extern float g_flApplyVel;
+
+void EV_VortiFire( event_args_t *args )
+{
+	int idx;
+	vec3_t origin;
+	vec3_t angles;
+	vec3_t velocity;
+	float flDamage = args->fparam1;
+	//int primaryfire = args->bparam1;
+
+	//int m_fPrimaryFire = args->bparam1;
+	//int m_iWeaponVolume = GAUSS_PRIMARY_FIRE_VOLUME;
+	vec3_t vecSrc;
+	vec3_t vecDest;
+	//edict_t		*pentIgnore;
+	pmtrace_t tr, beam_tr;
+	float flMaxFrac = 1.0;
+	//int nTotal = 0;
+	int fHasPunched = 0;
+	int fFirstBeam = 1;
+	int nMaxHits = 10;
+	physent_t *pEntity;
+	int m_iBeam, m_iGlow, m_iBalls;
+	vec3_t up, right, forward;
+
+	idx = args->entindex;
+	VectorCopy( args->origin, origin );
+	VectorCopy( args->angles, angles );
+	VectorCopy( args->velocity, velocity );
+
+	if( args->bparam2 )
+	{
+		EV_StopPreviousVorti( idx );
+		return;
+	}
+
+	//Con_Printf( "Firing gauss with %f\n", flDamage );
+	EV_GetGunPosition( args, vecSrc, origin );
+
+	m_iBeam = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/lgtning.spr" );
+	//m_iBalls = m_iGlow = gEngfuncs.pEventAPI->EV_FindModelIndex( "sprites/hotglow.spr" );
+
+	AngleVectors( angles, forward, right, up );
+
+	VectorMA( vecSrc, 8192, forward, vecDest );
+
+	if( EV_IsLocal( idx ) )
+	{
+		V_PunchAxis( 0, -2.0 );
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( VORTIHANDS_ZAP, 2 );
+
+		//if( m_fPrimaryFire == false )
+			// g_flApplyVel = flDamage; 
+	}
+
+	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/electro4.wav", 0.5 + flDamage * ( 1.0 / 400.0 ), ATTN_NORM, 0, 85 + gEngfuncs.pfnRandomLong( 0, 0x1f ) );
+
+	while( flDamage > 10 && nMaxHits > 0 )
+	{
+		nMaxHits--;
+
+		gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction( false, true );
+		
+		// Store off the old count
+		gEngfuncs.pEventAPI->EV_PushPMStates();
+	
+		// Now add in all of the players.
+		gEngfuncs.pEventAPI->EV_SetSolidPlayers( idx - 1 );	
+
+		gEngfuncs.pEventAPI->EV_SetTraceHull( 2 );
+		gEngfuncs.pEventAPI->EV_PlayerTrace( vecSrc, vecDest, PM_STUDIO_BOX, -1, &tr );
+
+		gEngfuncs.pEventAPI->EV_PopPMStates();
+
+		if( tr.allsolid )
+			break;
+
+		if( EV_IsLocal( idx ) )
+		{
+			// Add muzzle flash to current weapon model
+			EV_MuzzleFlash();
+		}
+		//fFirstBeam = 0;
+		for( int i = 1; i < 3; i++ )
+		{
+			gEngfuncs.pEfxAPI->R_BeamEntPoint( 
+				idx | ( i << 12 ),
+				tr.endpos,
+				m_iBeam,
+				0.3,
+				3.0,
+				0.5,
+				1.0,
+				55,
+				0,
+				0,
+				0.5,
+				1.0,
+				0
+			);
+		}
+
+		pEntity = gEngfuncs.pEventAPI->EV_GetPhysent( tr.ent );
+		if( pEntity == NULL )
+			break;
+
+		if( pEntity->solid == SOLID_BSP )
+		{
+			// tunnel
+			EV_HLDM_DecalGunshot( &tr, BULLET_MONSTER_12MM );
+
+			//gEngfuncs.pEfxAPI->R_TempSprite( tr.endpos, vec3_origin, 1.0, m_iGlow, kRenderGlow, kRenderFxNoDissipation, flDamage / 255.0, 6.0, FTENT_FADEOUT );
+			// limit it to one hole punch
+			if( fHasPunched )
+			{
+				break;
+			}
+			fHasPunched = 1;
+
+			// try punching through wall if secondary attack (primary is incapable of breaking through)
+			//gEngfuncs.pEventAPI->EV_PopPMStates();
+			flDamage = 0;
+		}
+		else
+		VectorAdd( tr.endpos, forward, vecSrc );
+	}
+}
+//======================
+//	VORTIHANDS END 
 //======================
 
 void EV_TrainPitchAdjust( event_args_t *args )

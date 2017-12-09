@@ -44,6 +44,7 @@ set (CLDLL_SOURCES
 	../dlls/tripmine.cpp 
 	../dlls/glock.cpp
 	../dlls/decay/displacer.cpp
+	../dlls/decay/vortihands.cpp
 	ev_hldm.cpp 
 	hl/hl_baseentity.cpp
 	hl/hl_events.cpp

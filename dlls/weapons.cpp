@@ -1639,3 +1639,10 @@ TYPEDESCRIPTION	CDisplacer::m_SaveData[] =
 };
 
 IMPLEMENT_SAVERESTORE( CDisplacer, CBasePlayerWeapon )
+
+TYPEDESCRIPTION CVortiHands::m_SaveData[] =
+{
+	DEFINE_FIELD( CVortiHands, m_fInAttack, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CVortiHands, CBasePlayerWeapon )
