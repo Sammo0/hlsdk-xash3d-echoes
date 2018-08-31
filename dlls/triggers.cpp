@@ -2146,6 +2146,19 @@ void CPlayerSpawnTrigger::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, US
 	}
 }
 
+class CTriggerBit : public CBaseDelay
+{
+public:
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+};
+
+LINK_ENTITY_TO_CLASS( trigger_bit, CTriggerBit )
+
+void CTriggerBit::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	SUB_UseTargets( this, USE_TOGGLE, 1 );
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
@@ -2488,3 +2501,5 @@ void CTriggerCamera::Move()
 	float fraction = 2 * gpGlobals->frametime;
 	pev->velocity = ( ( pev->movedir * pev->speed ) * fraction ) + ( pev->velocity * ( 1 - fraction ) );
 }
+
+
