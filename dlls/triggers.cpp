@@ -2252,6 +2252,66 @@ void CTriggerBitCounter::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 		pev->skin = newState;
 }
 
+class CTriggerRandom : public CBaseDelay
+{
+public:
+	void KeyValue( KeyValueData *pkvd );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+private:
+	int m_iRandomRange;
+	int m_iProbability;
+};
+
+LINK_ENTITY_TO_CLASS( trigger_random, CTriggerRandom )
+
+TYPEDESCRIPTION CTriggerRandom::m_SaveData[] =
+{
+	DEFINE_FIELD( CTriggerRandom, m_iRandomRange, FIELD_INTEGER ),
+	DEFINE_FIELD( CTriggerRandom, m_iProbability, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CTriggerRandom, CBaseDelay )
+
+void CTriggerRandom::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "randomrange" ) )
+	{
+		m_iRandomRange = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "probability" ) )
+	{
+		m_iProbability = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CBaseDelay::KeyValue( pkvd );
+}
+
+void CTriggerRandom::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	int i;
+	char szTargetName[32];
+
+	sprintf( szTargetName, "%s%d", STRING( pev->target ), RANDOM_LONG( 0, m_iRandomRange - 1 ) );
+	for( i = 0; ; i = 1 )
+	{
+		CBaseEntity *pTarget = 0;
+		pTarget = UTIL_FindEntityByTargetname( pTarget, szTargetName );
+		if( !pTarget )
+			break;
+
+		pTarget->Use( pActivator, pCaller, useType, value );
+	}
+
+	if( !i )
+		ALERT( at_console, "Randomly found entity `%s` not found!\n", szTargetName );
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
