@@ -2159,6 +2159,99 @@ void CTriggerBit::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 	SUB_UseTargets( this, USE_TOGGLE, 1 );
 }
 
+class CTriggerBitCounter : public CMultiSource
+{
+public:
+	void KeyValue( KeyValueData *pkvd );
+	void Spawn();
+        void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+private:
+	int m_initialstate;
+	int m_iDesiredBit;
+};
+
+LINK_ENTITY_TO_CLASS( trigger_bit_counter, CMultiSource )
+
+TYPEDESCRIPTION CTriggerBitCounter::m_SaveData[] =
+{
+	DEFINE_FIELD( CTriggerBitCounter, m_initialstate, FIELD_INTEGER ),
+	DEFINE_FIELD( CTriggerBitCounter, m_iDesiredBit, FIELD_INTEGER ),
+};
+
+IMPLEMENT_SAVERESTORE( CTriggerBitCounter, CMultiSource )
+
+void CTriggerBitCounter::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "triggermask" ) )
+	{
+		m_iDesiredBit = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "initialstate" ) )
+	{
+		m_initialstate = pev->skin = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CMultiSource::KeyValue( pkvd );
+}
+
+void CTriggerBitCounter::Spawn()
+{
+	if( !m_globalstate )
+	{
+		REMOVE_ENTITY( ENT( pev ) );
+		return;
+	}
+
+	if( !gGlobalState.EntityInTable( m_globalstate ) )
+		gGlobalState.EntityAdd( m_globalstate, gpGlobals->mapname, (GLOBALESTATE)m_initialstate );
+}
+
+void CTriggerBitCounter::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	int oldState, newState;
+
+	if( !pActivator )
+		return;
+
+	if( m_globalstate )
+		oldState = gGlobalState.EntityGetState( m_globalstate );
+	else
+		oldState = pev->skin;
+
+	switch( useType )
+	{
+	case USE_OFF:
+		newState = ~pev->skin & oldState;
+		break;
+	case USE_ON:
+		newState = pev->skin | oldState;
+		break;
+	case USE_TOGGLE:
+	default:
+		newState = pev->skin ^ oldState;
+		break;
+	}
+
+	if( newState == m_iDesiredBit )
+		SUB_UseTargets( this, USE_TOGGLE, 0 );
+
+	if( m_globalstate )
+	{
+		if( gGlobalState.EntityInTable( m_globalstate ) )
+			gGlobalState.EntitySetState( m_globalstate, (GLOBALESTATE)newState );
+		else
+			gGlobalState.EntityAdd( m_globalstate, gpGlobals->mapname, (GLOBALESTATE)newState );
+	}
+	else
+		pev->skin = newState;
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
