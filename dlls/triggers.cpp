@@ -2336,6 +2336,43 @@ void CTriggerAutoBot::Think()
 	}
 }
 
+class CTriggerKicker : public CBaseDelay
+{
+public:
+	void Spawn();
+	void Touch( CBaseEntity *pOther );
+	void Think();
+private:
+	EHANDLE m_hPlayer;
+};
+
+LINK_ENTITY_TO_CLASS( trigger_kicker, CTriggerKicker )
+
+void CTriggerKicker::Spawn()
+{
+	pev->nextthink = 0;
+}
+
+void CTriggerKicker::Touch( CBaseEntity *pOther )
+{
+	ALERT( at_console, "Going to kick spare player %s!\n", STRING( pOther->pev->netname ) );
+	m_hPlayer = pOther;
+	pev->nextthink = gpGlobals->time + 3.0f;
+}
+
+void CTriggerKicker::Think()
+{
+	if( g_bIsDecayGame && g_pGameRules->IsCoOp() )
+	{
+		char szCmd[64];
+
+		sprintf( szCmd, "kick \"%s\"\n", STRING( m_hPlayer->pev->netname ) );
+
+		SERVER_COMMAND( szCmd );
+		UTIL_Remove( this );
+	}
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
