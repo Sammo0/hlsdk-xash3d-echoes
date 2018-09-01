@@ -2309,7 +2309,31 @@ void CTriggerRandom::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	}
 
 	if( !i )
-		ALERT( at_console, "Randomly found entity `%s` not found!\n", szTargetName );
+		ALERT( at_console, "Randomly found entity \"%s\" not found!\n", szTargetName );
+}
+
+class CTriggerAutoBot : public CBaseDelay
+{
+public:
+	void Spawn();
+        void Think();
+};
+
+LINK_ENTITY_TO_CLASS( trigger_autobot, CTriggerAutoBot )
+
+void CTriggerAutoBot::Spawn()
+{
+	pev->nextthink = gpGlobals->time + 9.0f;
+}
+
+void CTriggerAutoBot::Think()
+{
+	if( g_bIsDecayGame && g_pGameRules->IsCoOp() )
+	{
+		if( g_pGameRules->CountPlayers() == 1 )
+			SERVER_COMMAND( "addbot\n" );	
+		UTIL_Remove( this );
+	}
 }
 
 // this is a really bad idea.

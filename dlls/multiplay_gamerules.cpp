@@ -1443,7 +1443,7 @@ CountPlayers
 Determine the current # of active players on the server for map cycling logic
 ==============
 */
-int CountPlayers( void )
+int CHalfLifeMultiplay::CountPlayers( void )
 {
 	int num = 0;
 

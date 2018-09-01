@@ -33,7 +33,6 @@ extern DLL_GLOBAL BOOL g_fGameOver;
 extern int gmsgDeathMsg;	// client dll messages
 extern int gmsgMOTD;
 
-extern BOOL g_bIsDecayGame;
 int g_teamplay = 0;
 
 //=========================================================

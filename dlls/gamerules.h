@@ -23,6 +23,8 @@ class CBasePlayer;
 class CItem;
 class CBasePlayerAmmo;
 
+extern BOOL g_bIsDecayGame;
+
 // weapon respawning return codes
 enum
 {	
@@ -61,6 +63,7 @@ class CGameRules
 public:
 	virtual ~CGameRules(){}
 
+	virtual int CountPlayers() = 0;
 	virtual void RefreshSkillData( void );// fill skill data struct with proper values
 	virtual void Think( void ) = 0;// GR_Think - runs every server frame, should handle any timer tasks, periodic events, etc.
 	virtual BOOL IsAllowedToSpawn( CBaseEntity *pEntity ) = 0;  // Can this item spawn (eg monsters don't spawn in deathmatch).
@@ -174,6 +177,8 @@ class CHalfLifeRules : public CGameRules
 public:
 	CHalfLifeRules ( void );
 
+	virtual int CountPlayers() { return 1; };
+
 	// GR_Think
 	virtual void Think( void );
 	virtual BOOL IsAllowedToSpawn( CBaseEntity *pEntity );
@@ -259,6 +264,8 @@ class CHalfLifeMultiplay : public CGameRules
 {
 public:
 	CHalfLifeMultiplay();
+
+	virtual int CountPlayers();
 
 	// GR_Think
 	virtual void Think( void );
