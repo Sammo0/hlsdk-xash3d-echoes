@@ -176,6 +176,20 @@ void CCheatHelper::KeyValue( KeyValueData *pkvd )
 		CPointEntity::KeyValue( pkvd );	
 }
 
+class CEmitterTarget : public CPointEntity
+{
+public:
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+};
+
+LINK_ENTITY_TO_CLASS( info_emittertarget, CEmitterTarget )
+
+void CEmitterTarget::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	FireTargets( STRING( pev->target ), this, this, USE_TOGGLE, 0 );
+	ALERT( at_console, "info_emittertarget called Use! Firing %s\n", STRING( pev->target ) );
+}
+
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
 {
