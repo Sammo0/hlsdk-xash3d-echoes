@@ -27,6 +27,7 @@
 #include "saverestore.h"
 #include "trains.h"			// trigger_camera has train functionality
 #include "gamerules.h"
+#include "shake.h"
 
 #define	SF_TRIGGER_PUSH_START_OFF	2//spawnflag that makes trigger_push spawn turned OFF
 #define SF_TRIGGER_HURT_TARGETONCE	1// Only fire hurt target once
@@ -2371,6 +2372,41 @@ void CTriggerKicker::Think()
 		SERVER_COMMAND( szCmd );
 		UTIL_Remove( this );
 	}
+}
+
+class CTriggerLockedMission : public CBaseDelay
+{
+public:
+	void Spawn();
+	void Think();
+};
+
+LINK_ENTITY_TO_CLASS( trigger_lockedmission, CTriggerLockedMission )
+
+void CTriggerLockedMission::Spawn()
+{
+	pev->nextthink = 0;
+	pev->message = MAKE_STRING( "DYLOCKED" );
+}
+
+void CTriggerLockedMission::Think()
+{
+	CBasePlayer *pPlayer = 0;
+	while( true )
+	{
+		pPlayer = (CBasePlayer*)UTIL_FindEntityByClassname( pPlayer, "player" );
+		if( !pPlayer )
+			break;
+		if( !FNullEnt( FIND_CLIENT_IN_PVS( pPlayer->edict() ) ) )
+		{
+			pPlayer->EnableControl( FALSE );
+		}
+		else
+			break;
+	}
+	UTIL_ScreenFadeAll( g_vecZero, 7.0f, 3.0f, 255, FFADE_OUT );
+	UTIL_ShowMessageAll( STRING( pev->message ) );
+	pev->nextthink = gpGlobals->time + 7.0f;
 }
 
 // this is a really bad idea.
