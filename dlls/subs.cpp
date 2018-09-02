@@ -104,6 +104,78 @@ void CFlagHelper::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 	}
 }
 
+class CCheatHelper : public CPointEntity
+{
+public:
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void KeyValue( KeyValueData *pkvd );
+
+	virtual int Save( CSave &save );
+	virtual int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+private:
+	string_t m_szCheatBonus;
+	string_t m_szTarget1;
+	string_t m_szCheatAlien;
+	string_t m_szTarget2;
+};
+
+LINK_ENTITY_TO_CLASS( info_cheathelper, CCheatHelper )
+
+TYPEDESCRIPTION CCheatHelper::m_SaveData[] =
+{
+	DEFINE_FIELD( CCheatHelper, m_szCheatBonus, FIELD_STRING ),
+	DEFINE_FIELD( CCheatHelper, m_szTarget1, FIELD_STRING ),
+	DEFINE_FIELD( CCheatHelper, m_szCheatAlien, FIELD_STRING ),
+	DEFINE_FIELD( CCheatHelper, m_szTarget2, FIELD_STRING ),
+};
+
+IMPLEMENT_SAVERESTORE( CCheatHelper, CPointEntity )
+
+void CCheatHelper::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( pev->targetname )
+	{
+		ALERT( at_console, "Current code: '%s'\n", STRING( pev->targetname ) );
+
+		if( FStrEq( STRING( pev->targetname ), STRING( m_szCheatBonus ) ) && m_szTarget1 )
+		{
+			FireTargets( STRING( m_szTarget1 ), this, this, USE_TOGGLE, 0 );
+		}
+
+		if( FStrEq( STRING( pev->targetname ), STRING( m_szCheatAlien ) ) && m_szTarget2 )
+		{
+			FireTargets( STRING( m_szTarget2 ), this, this, USE_TOGGLE, 0 );
+		}
+	}
+}
+
+void CCheatHelper::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "cheat_bonus" ) )
+	{
+		m_szCheatBonus = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "cheat_alien" ) )
+	{
+		m_szCheatAlien = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "target1" ) )
+	{
+		m_szTarget1 = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "target2" ) )
+	{
+		m_szTarget2 = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CPointEntity::KeyValue( pkvd );	
+}
+
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
 {
