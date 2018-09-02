@@ -676,6 +676,29 @@ void CFuncRotating::Blocked( CBaseEntity *pOther )
 {
 	pOther->TakeDamage( pev, pev, pev->dmg, DMG_CRUSH );
 }
+
+class CFuncFrame : public CFuncWall
+{
+public:
+	void Spawn();
+};
+
+LINK_ENTITY_TO_CLASS( func_frame, CFuncFrame )
+
+void CFuncFrame::Spawn()
+{
+	pev->angles = g_vecZero;
+	pev->movetype = MOVETYPE_PUSH;	// so it doesn't get pushed by anything
+	pev->solid = SOLID_NOT;
+	SET_MODEL( ENT( pev ), STRING( pev->model ) );
+
+	// If it can't move/go away, it's really part of the world
+	pev->flags |= FL_WORLDBRUSH;
+	pev->effects |= EF_NODRAW; // ???
+	SET_MODEL( ENT( pev ), STRING( pev->model ) ); // ???
+	pev->nextthink = 0.1; // ???
+}
+
 //#endif
 class CPendulum : public CBaseEntity
 {
