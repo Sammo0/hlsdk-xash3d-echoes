@@ -565,6 +565,7 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS( trigger_hurt, CTriggerHurt )
+LINK_ENTITY_TO_CLASS( trigger_new_hurt, CTriggerHurt )
 
 //
 // trigger_monsterjump
@@ -864,7 +865,40 @@ void CTriggerHurt::RadiationThink( void )
 //
 void CBaseTrigger::ToggleUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	if( pev->solid == SOLID_NOT )
+	if( FClassnameIs( pev, "trigger_new_hurt" ) )
+	{
+		bool bIsSolid;
+
+		switch( useType )
+		{
+		case USE_ON:
+			bIsSolid = true;
+			break;
+		case USE_OFF:
+			bIsSolid = false;
+			break;
+		case USE_TOGGLE:
+			bIsSolid = ( pev->solid != SOLID_TRIGGER );
+			break;
+		default:
+			bIsSolid = ( pev->solid == SOLID_TRIGGER );
+			break;
+		}
+		if( bIsSolid )
+		{
+			// if the trigger is off, turn it on
+			pev->solid = SOLID_TRIGGER;
+
+			// Force retouch
+			gpGlobals->force_retouch++;
+		}
+		else
+		{
+			// turn the trigger off
+			pev->solid = SOLID_NOT;
+		}
+	}
+	else if( pev->solid == SOLID_NOT )
 	{
 		// if the trigger is off, turn it on
 		pev->solid = SOLID_TRIGGER;
