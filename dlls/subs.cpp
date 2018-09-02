@@ -86,6 +86,24 @@ BOOL CBaseDMStart::IsTriggered( CBaseEntity *pEntity )
 	return master;
 }
 
+class CFlagHelper : public CPointEntity
+{
+public:
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+};
+
+LINK_ENTITY_TO_CLASS( info_flaghelper, CFlagHelper )
+
+void CFlagHelper::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	if( pev->target )
+	{
+		CBaseEntity *pTarget = UTIL_FindEntityByTargetname( 0, STRING( pev->target ) );
+		if( pTarget )
+			pTarget->pev->flags = pev->flags;
+	}
+}
+
 // This updates global tables that need to know about entities being removed
 void CBaseEntity::UpdateOnRemove( void )
 {
