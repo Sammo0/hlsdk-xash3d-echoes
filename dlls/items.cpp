@@ -584,3 +584,76 @@ void CItemSlaveCollar::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_T
 		SetThink( &CItemSlaveCollar::OffThink );
 	pev->nextthink = gpGlobals->time + 0.01f;
 }
+
+class CNotepad : public CBaseToggle
+{
+public:
+        void Spawn();
+	void Precache();
+	void KeyValue( KeyValueData *pkvd );
+	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+
+	int Save( CSave &save );
+	int Restore( CRestore &restore );
+	static TYPEDESCRIPTION m_SaveData[];
+private:
+	string_t m_szText;
+	int m_iTitle;
+};
+
+LINK_ENTITY_TO_CLASS( func_notepad, CNotepad )
+
+TYPEDESCRIPTION CNotepad::m_SaveData[] =
+{
+	DEFINE_FIELD( CNotepad, m_szText, FIELD_STRING ),
+	DEFINE_FIELD( CNotepad, m_iTitle, FIELD_INTEGER ),
+};
+         
+IMPLEMENT_SAVERESTORE( CNotepad, CBaseToggle )
+
+void CNotepad::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "title" ) )
+	{
+		m_iTitle = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "text" ) )
+	{
+		m_szText = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CBaseToggle::KeyValue( pkvd );	
+}
+
+void CNotepad::Spawn()
+{
+	Precache();
+
+        pev->solid = SOLID_BSP;
+        pev->movetype = MOVETYPE_PUSH;
+ 
+        UTIL_SetOrigin( pev, pev->origin );             // set size and link into world
+        UTIL_SetSize( pev, pev->mins, pev->maxs );
+        SET_MODEL( ENT( pev ), STRING( pev->model ) );
+}
+
+void CNotepad::Precache()
+{
+}
+
+void CNotepad::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+        // Make sure that we have a caller
+        if( !pActivator )
+                return;
+        // if it's not a player, ignore
+        if( !pActivator->IsPlayer() )
+                return;
+
+	MESSAGE_BEGIN( MSG_ONE, gmsgNotepad, 0, pActivator->edict() );
+		WRITE_STRING( STRING( m_szText ) );
+		WRITE_BYTE( m_iTitle );
+	MESSAGE_END();
+}
