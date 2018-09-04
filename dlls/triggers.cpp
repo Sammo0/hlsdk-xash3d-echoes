@@ -2443,6 +2443,132 @@ void CTriggerLockedMission::Think()
 	pev->nextthink = gpGlobals->time + 7.0f;
 }
 
+class CTriggerEndDecay : public CBaseTrigger
+{
+public:
+	void KeyValue( KeyValueData *pkvd );
+	void Spawn();
+	void EXPORT EndDecayUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void EXPORT EndDecayThink();
+	void EXPORT EndDecayTouch( CBaseEntity *pOther );
+private:
+	BOOL m_bIsSuccess;
+	int m_iKills[3];
+	int m_iWounds[3];
+	float m_flAccuracyA[3];
+};
+
+LINK_ENTITY_TO_CLASS( trigger_enddecay, CTriggerEndDecay )
+
+void CTriggerEndDecay::KeyValue( KeyValueData *pkvd )
+{
+	if( FStrEq( pkvd->szKeyName, "success" ) )
+	{
+		m_bIsSuccess = ( atoi( pkvd->szValue ) == TRUE );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "woundsa" ) )
+	{
+		m_iWounds[0] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "woundsb" ) )
+	{
+		m_iWounds[1] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "woundsc" ) )
+	{
+		m_iWounds[2] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "killsa" ) )
+	{
+		m_iKills[0] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "killsb" ) )
+	{
+		m_iKills[1] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "killsc" ) )
+	{
+		m_iKills[2] = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "accuracya" ) )
+	{
+		m_flAccuracy[0] = atof( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "accuracyb" ) )
+	{
+		m_flAccuracy[1] = atof( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "accuracyc" ) )
+	{
+		m_flAccuracy[2] = atof( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if( FStrEq( pkvd->szKeyName, "section" ) )
+	{
+		pev->message = ALLOC_STRING( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else
+		CBaseTrigger::KeyValue( pkvd );
+}
+
+void CTriggerEndDecay::Spawn()
+{
+	if( g_pGameRules->IsDeathmatch() )
+	{
+		REMOVE_ENTITY( ENT( pev ) );
+		return;
+	}
+
+	InitTrigger();
+
+	SetThink( &CBaseEntity::SUB_DoNothing );
+	SetUse( &CTriggerEndDecay::EndDecayUse );
+
+	// If it is a "use only" trigger, then don't set the touch function.
+	if( !( pev->spawnflags & SF_ENDSECTION_USEONLY ) )
+		SetTouch( &CTriggerEndDecay::EndDecayTouch );
+}
+
+void CTriggerEndDecay::EndDecayUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	while( true )
+        {
+                pPlayer = (CBasePlayer*)UTIL_FindEntityByClassname( pPlayer, "player" );
+                if( !pPlayer )
+                        break;
+                if( !FNullEnt( FIND_CLIENT_IN_PVS( pPlayer->edict() ) ) )
+                {
+                        pPlayer->EnableControl( FALSE );
+                }
+                else
+                        break;
+        }
+}
+
+void CTriggerEndDecay::EndDecayTouch( CBaseEntity *pOther )
+{
+        // Only save on clients
+        if( !pOther->IsNetClient() )
+                return;
+
+	SetTouch( NULL );
+	EndDecayUse( pOther, pOther, USE_ON, 1 );
+}
+
+void CTriggerEndDecay::EndDecayThink()
+{
+}
+
 // this is a really bad idea.
 class CTriggerChangeTarget : public CBaseDelay
 {
