@@ -89,6 +89,9 @@ struct HUDLIST
 
 //
 //-----------------------------------------------------
+#if defined(USE_VGUI)
+#include "voice_status.h"
+#endif
 #include "hud_spectator.h"
 
 //
@@ -671,9 +674,13 @@ public:
 
 	float GetSensitivity();
 };
-
+#if defined(USE_VGUI)
+class TeamFortressViewport;
+#endif
 extern CHud gHUD;
-
+#if defined(USE_VGUI)
+extern TeamFortressViewport *gViewPort;
+#endif
 extern int g_iPlayerClass;
 extern int g_iTeamNumber;
 extern int g_iUser1;

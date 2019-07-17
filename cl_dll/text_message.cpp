@@ -25,6 +25,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "parsemsg.h"
+#if defined(USE_VGUI)
+#include "vgui_TeamFortressViewport.h"
+#endif
 
 DECLARE_MESSAGE( m_TextMessage, TextMsg )
 
@@ -177,6 +180,11 @@ int CHudTextMessage::MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf
 	}
 
 	char *psz = szBuf[5];
+
+#if defined(USE_VGUI)
+	if( gViewPort && gViewPort->AllowedToPrintText() == FALSE )
+		return 1;
+#endif
 
 	switch( msg_dest )
 	{
