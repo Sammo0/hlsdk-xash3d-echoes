@@ -4,12 +4,9 @@
 //
 // $NoKeywords: $
 //=============================================================================
-
+#pragma once
 #ifndef BITVEC_H
 #define BITVEC_H
-#ifdef _WIN32
-#pragma once
-#endif
 
 #include <assert.h>
 #include <string.h>
@@ -158,3 +155,4 @@ inline void CBitVec<NUM_BITS>::SetDWord( int i, unsigned long val )
 	m_DWords[i] = val;
 }
 #endif // BITVEC_H
+

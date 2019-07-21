@@ -4,10 +4,9 @@
 //
 // $NoKeywords: $
 //=============================================================================
-
+#pragma once
 #ifndef VOICE_GAMEMGR_H
 #define VOICE_GAMEMGR_H
-#pragma once
 
 #include "voice_common.h"
 
@@ -56,7 +55,6 @@ private:
 	// Force it to update the client masks.
 	void UpdateMasks();
 
-private:
 	int m_msgPlayerVoiceMask;
 	int m_msgRequestState;
 
