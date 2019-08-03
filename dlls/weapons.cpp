@@ -604,6 +604,8 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 {
 	WeaponTick();
 
+	MakeLaser();
+
 	if( ( m_fInReload ) && ( m_pPlayer->m_flNextAttack <= UTIL_WeaponTimeBase() ) )
 	{
 		// complete the reload. 
@@ -682,6 +684,51 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	{
 		WeaponIdle();
 	}
+}
+
+void CBasePlayerWeapon::KillLaser( void )
+{
+#ifndef CLIENT_DLL
+	if( m_pLaser )
+	{
+		UTIL_Remove( m_pLaser );
+		m_pLaser = NULL;
+	}
+#endif
+}
+
+void CBasePlayerWeapon::MakeLaser( void )
+{
+
+#ifndef CLIENT_DLL
+
+	if (CVAR_GET_FLOAT("vr_lasersight") == 0.0f) {
+		KillLaser();
+		return;
+	}
+
+	TraceResult tr;
+
+	// ALERT( at_console, "serverflags %f\n", gpGlobals->serverflags );
+
+	Vector vecSrc = m_pPlayer->GetGunPosition();
+	Vector vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
+	Vector vecEnd;
+	vecEnd = vecSrc + vecAiming * 2048;
+	UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
+
+	float flBeamLength = tr.flFraction;
+
+	// set to follow laser spot
+	Vector vecTmpEnd = vecSrc + vecAiming * 2048 * flBeamLength;
+	if (!m_pLaser) {
+		m_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
+	}
+	m_pLaser->PointsInit( vecSrc, vecEnd );
+	m_pLaser->SetColor( 214, 34, 34 );
+	m_pLaser->SetScrollRate( 255 );
+	m_pLaser->SetBrightness( 96 );
+#endif
 }
 
 void CBasePlayerItem::DestroyItem( void )
@@ -773,10 +820,7 @@ int CBasePlayerWeapon::UpdateClientData( CBasePlayer *pPlayer )
 	int state = 0;
 	if( pPlayer->m_pActiveItem == this )
 	{
-		if( pPlayer->m_fOnTarget )
-			state = WEAPON_IS_ONTARGET;
-		else
-			state = 1;
+		state = 1;
 	}
 
 	// Forcing send of all data!
@@ -1015,6 +1059,8 @@ void CBasePlayerWeapon::Holster( int skiplocal /* = 0 */ )
 	m_fInReload = FALSE; // cancel any reload in progress.
 	m_pPlayer->pev->viewmodel = 0; 
 	m_pPlayer->pev->weaponmodel = 0;
+
+	KillLaser();
 }
 
 void CBasePlayerAmmo::Spawn( void )
@@ -1574,7 +1620,7 @@ IMPLEMENT_SAVERESTORE( CRpg, CBasePlayerWeapon )
 TYPEDESCRIPTION	CRpgRocket::m_SaveData[] =
 {
 	DEFINE_FIELD( CRpgRocket, m_flIgniteTime, FIELD_TIME ),
-	DEFINE_FIELD( CRpgRocket, m_hLauncher, FIELD_EHANDLE ),
+	DEFINE_FIELD( CRpgRocket, m_pLauncher, FIELD_EHANDLE ),
 };
 
 IMPLEMENT_SAVERESTORE( CRpgRocket, CGrenade )
@@ -1617,7 +1663,7 @@ IMPLEMENT_SAVERESTORE( CEgon, CBasePlayerWeapon )
 
 TYPEDESCRIPTION CHgun::m_SaveData[] =
 {
-	DEFINE_FIELD( CHgun, m_flRechargeTime, FIELD_TIME ),
+	DEFINE_FIELD( CHgun, m_flRechargeTime, FIELD_FLOAT ),
 };
 
 IMPLEMENT_SAVERESTORE( CHgun, CBasePlayerWeapon )

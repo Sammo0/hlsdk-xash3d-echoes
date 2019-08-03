@@ -962,9 +962,11 @@ float UTIL_VecToYaw( const Vector &vec )
 
 void UTIL_SetOrigin( entvars_t *pev, const Vector &vecOrigin )
 {
-	edict_t *ent = ENT( pev );
-	if( ent )
-		SET_ORIGIN( ent, vecOrigin );
+	SET_ORIGIN(ENT(pev), vecOrigin);
+	if (CBaseEntity::Instance(pev) && CBaseEntity::Instance(pev)->IsPlayer())
+	{
+		((CBasePlayer*)CBaseEntity::Instance(pev))->ClearClientOriginOffset();
+	}
 }
 
 void UTIL_ParticleEffect( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount )
@@ -1733,8 +1735,8 @@ void CSaveRestoreBuffer::BufferRewind( int size )
 extern "C" {
 unsigned _rotr( unsigned val, int shift )
 {
-	unsigned lobit;	/* non-zero means lo bit set */
-	unsigned num = val;	/* number to rotate */
+	register unsigned lobit;	/* non-zero means lo bit set */
+	register unsigned num = val;	/* number to rotate */
 
 	shift &= 0x1f;			/* modulo 32 -- this will also make
 	                                   negative shifts work */

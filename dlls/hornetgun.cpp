@@ -132,9 +132,9 @@ void CHgun::PrimaryAttack()
 		return;
 	}
 #ifndef CLIENT_DLL
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	UTIL_MakeVectors( m_pPlayer->GetWeaponViewAngles() );
 
-	CBaseEntity *pHornet = CBaseEntity::Create( "hornet", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+	CBaseEntity *pHornet = CBaseEntity::Create( "hornet", m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->GetWeaponAngles(), m_pPlayer->edict() );
 	pHornet->pev->velocity = gpGlobals->v_forward * 300;
 
 	m_flRechargeTime = gpGlobals->time + 0.5;
@@ -150,7 +150,7 @@ void CHgun::PrimaryAttack()
 #else
 	flags = 0;
 #endif
-	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usHornetFire, 0.0, g_vecZero, g_vecZero, 0.0, 0.0, FIREMODE_TRACK, 0, 0, 0 );
+	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usHornetFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, FIREMODE_TRACK, 0, 0, 0 );
 
 	// player "shoot" animation
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
@@ -179,7 +179,7 @@ void CHgun::SecondaryAttack( void )
 	CBaseEntity *pHornet;
 	Vector vecSrc;
 
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	UTIL_MakeVectors( m_pPlayer->GetWeaponViewAngles());
 
 	vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
 
@@ -217,9 +217,9 @@ void CHgun::SecondaryAttack( void )
 		break;
 	}
 
-	pHornet = CBaseEntity::Create( "hornet", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict() );
+	pHornet = CBaseEntity::Create( "hornet", vecSrc, m_pPlayer->GetWeaponAngles(), m_pPlayer->edict() );
 	pHornet->pev->velocity = gpGlobals->v_forward * 1200;
-	pHornet->pev->angles = UTIL_VecToAngles( pHornet->pev->velocity );
+
 
 	pHornet->SetThink( &CHornet::StartDart );
 
@@ -231,7 +231,7 @@ void CHgun::SecondaryAttack( void )
 #else
 	flags = 0;
 #endif
-	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usHornetFire, 0.0, g_vecZero, g_vecZero, 0.0, 0.0, FIREMODE_FAST, 0, 0, 0 );
+	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usHornetFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, FIREMODE_FAST, 0, 0, 0 );
 
 	m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;

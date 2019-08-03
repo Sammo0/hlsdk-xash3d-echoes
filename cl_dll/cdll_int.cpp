@@ -22,6 +22,7 @@
 #include "cl_util.h"
 #include "netadr.h"
 #include "parsemsg.h"
+#include "vr_renderer.h"
 
 #if defined(GOLDSOURCE_SUPPORT) && (defined(_WIN32) || defined(__linux__) || defined(__APPLE__)) && (defined(__i386) || defined(_M_IX86))
 #define USE_VGUI_FOR_GOLDSOURCE_SUPPORT
@@ -212,9 +213,7 @@ void TeamFortressViewport::paintBackground()
 //	int wide, tall;
 //	getParent()->getSize( wide, tall );
 //	setSize( wide, tall );
-	int extents[4];
-	getParent()->getAbsExtents(extents[0],extents[1],extents[2],extents[3]);
-	gEngfuncs.VGui_ViewportPaintBackground(extents);
+	gEngfuncs.VGui_ViewportPaintBackground(HUD_GetRect());
 }
 
 void *TeamFortressViewport::operator new( size_t stAllocateBlock )
@@ -289,7 +288,8 @@ redraw the HUD.
 
 int DLLEXPORT HUD_Redraw( float time, int intermission )
 {
-	gHUD.Redraw( time, intermission );
+	gVRRenderer.InterceptHUDRedraw(time, intermission);
+	//gHUD.Redraw( time, intermission );
 
 	return 1;
 }
@@ -343,6 +343,8 @@ void DLLEXPORT HUD_Frame( double time )
 #else
 	gEngfuncs.VGui_ViewportPaintBackground(HUD_GetRect());
 #endif
+
+	gVRRenderer.Frame(time);
 }
 
 /*

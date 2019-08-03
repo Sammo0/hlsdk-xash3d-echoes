@@ -46,11 +46,26 @@ cvar_t	*cl_laddermode;
 int CL_IsDead( void );
 extern Vector dead_viewangles;
 
+#ifdef VR
+//We have to use this because in VR the tiniest positional movement means forwardmove and sidem0ve never go to
+//zero, which means the button flags _never_ get reset. As long as we are close to zero then we should accept that
+//as being close enough, and therefore button flags can be reset. I have arbitrariliy picked 0.05f as "close".
+//This was preventing the use of ladders
+static inline bool valueCloseToZero(float value)
+{
+    return (value > -0.05f && value < 0.05f);
+}
+#endif
+
 void IN_ToggleButtons( float forwardmove, float sidemove )
 {
 	static unsigned int moveflags = T | S;
 
-	if( forwardmove )
+#ifdef VR
+	if( !valueCloseToZero( forwardmove ))
+#else
+    if( forwardmove )
+#endif
 		moveflags &= ~T;
 	else
 	{
@@ -65,8 +80,12 @@ void IN_ToggleButtons( float forwardmove, float sidemove )
 			moveflags |= T;
 		}
 	}
-	if( sidemove )
-		moveflags &= ~S;
+#ifdef VR
+    if( !valueCloseToZero( sidemove ))
+#else
+        if( sidemove )
+#endif
+        moveflags &= ~S;
 	else
 	{
 		//gEngfuncs.Con_Printf("l%d r%d\n", in_moveleft.state, in_moveright.state);
@@ -133,10 +152,20 @@ void FWGSInput::IN_ClientMoveEvent( float forwardmove, float sidemove )
 	ac_movecount++;
 }
 
+#ifdef VR
+void FWGSInput::IN_ClientLookEvent( float relyaw, float relpitch, float relroll )
+#else
 void FWGSInput::IN_ClientLookEvent( float relyaw, float relpitch )
+#endif
 {
+#ifdef VR
+	rel_yaw = relyaw;
+	rel_pitch = relpitch;
+	rel_roll = relroll;
+#else
 	rel_yaw += relyaw;
 	rel_pitch += relpitch;
+#endif
 }
 
 // Rotate camera and add move values to usercmd
@@ -170,6 +199,8 @@ void FWGSInput::IN_Move( float frametime, usercmd_t *cmd )
 	{
 		gEngfuncs.GetViewAngles( viewangles );
 	}
+
+#ifndef VR
 	if( gHUD.GetSensitivity() != 0 )
 	{
 		rel_yaw *= gHUD.GetSensitivity();
@@ -180,26 +211,43 @@ void FWGSInput::IN_Move( float frametime, usercmd_t *cmd )
 		rel_yaw *= sensitivity->value;
 		rel_pitch *= sensitivity->value;
 	}
+#endif
+
+	viewangles[YAW] -= old_yaw;
 	viewangles[YAW] += rel_yaw;
+
 	if( fLadder )
 	{
+#ifndef VR
 		if( cl_laddermode->value == 1 )
 			viewangles[YAW] -= ac_sidemove * 5;
+#endif
 		ac_sidemove = 0;
 	}
+
 	if( gHUD.m_MOTD.m_bShow )
 		gHUD.m_MOTD.scroll += rel_pitch;
-	else
-		viewangles[PITCH] += rel_pitch;
+	else {
+#ifndef VR
+        viewangles[PITCH] += rel_pitch;
+#else
+        viewangles[PITCH] = rel_pitch;
+    }
+
+    viewangles[ROLL] = rel_roll;
+#endif //!VR
 
 	if( viewangles[PITCH] > cl_pitchdown->value )
 		viewangles[PITCH] = cl_pitchdown->value;
 	if( viewangles[PITCH] < -cl_pitchup->value )
 		viewangles[PITCH] = -cl_pitchup->value;
-	
-	// HACKHACK: change viewangles directly in viewcode, 
+
+#ifndef VR
+	// HACKHACK: change viewangles directly in viewcode,
 	// so viewangles when player is dead will not be changed on server
+
 	if( !CL_IsDead() )
+#endif
 	{
 		gEngfuncs.SetViewAngles( viewangles );
 	}
@@ -220,7 +268,13 @@ void FWGSInput::IN_Move( float frametime, usercmd_t *cmd )
 		}
 	}
 
+#ifndef VR
 	ac_sidemove = ac_forwardmove = rel_pitch = rel_yaw = 0;
+#else
+    old_yaw = rel_yaw;
+	ac_sidemove = ac_forwardmove = rel_pitch = rel_roll = 0;
+#endif
+
 	ac_movecount = 0;
 }
 
@@ -281,5 +335,5 @@ void FWGSInput::IN_Init( void )
 	sensitivity = gEngfuncs.pfnRegisterVariable( "sensitivity", "3", FCVAR_ARCHIVE );
 	in_joystick = gEngfuncs.pfnRegisterVariable( "joystick", "0", FCVAR_ARCHIVE );
 	cl_laddermode = gEngfuncs.pfnRegisterVariable( "cl_laddermode", "2", FCVAR_ARCHIVE );
-	ac_forwardmove = ac_sidemove = rel_yaw = rel_pitch = 0;
+	ac_forwardmove = ac_sidemove = rel_yaw = rel_pitch = old_yaw = 0;
 }

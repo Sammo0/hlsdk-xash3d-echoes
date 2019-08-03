@@ -123,7 +123,7 @@ BOOL CMP5::Deploy()
 void CMP5::PrimaryAttack()
 {
 	// don't fire underwater
-	if( m_pPlayer->pev->waterlevel == 3 )
+	if( m_pPlayer->IsWeaponUnderWater() )
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = 0.15;
@@ -171,7 +171,7 @@ void CMP5::PrimaryAttack()
 #else
 	flags = 0;
 #endif
-	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usMP5, 0.0, g_vecZero, g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
+	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usMP5, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, 0, 0, 0, 0 );
 
 	if( !m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 )
 		// HEV suit - indicate out of ammo condition
@@ -188,7 +188,7 @@ void CMP5::PrimaryAttack()
 void CMP5::SecondaryAttack( void )
 {
 	// don't fire underwater
-	if( m_pPlayer->pev->waterlevel == 3 )
+	if( m_pPlayer->IsWeaponUnderWater() )
 	{
 		PlayEmptySound( );
 		m_flNextPrimaryAttack = 0.15;
@@ -212,12 +212,10 @@ void CMP5::SecondaryAttack( void )
 	// player "shoot" animation
 	m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
- 	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+ 	UTIL_MakeVectors( m_pPlayer->GetWeaponViewAngles() );
 
 	// we don't add in player velocity anymore.
-	CGrenade::ShootContact( m_pPlayer->pev,
-					m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16, 
-					gpGlobals->v_forward * 800 );
+	CGrenade::ShootContact( m_pPlayer->pev, m_pPlayer->GetWeaponPosition() + gpGlobals->v_forward * 16, gpGlobals->v_forward * 800 );
 
 	int flags;
 #if defined( CLIENT_WEAPONS )

@@ -642,6 +642,7 @@ void CScientist::Spawn( void )
 	SET_MODEL( ENT( pev ), "models/scientist.mdl" );
 	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX );
 
+	pev->scale = VR_SCALE_HUMANS;
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
@@ -694,6 +695,12 @@ void CScientist::Precache( void )
 void CScientist::TalkInit()
 {
 	CTalkMonster::TalkInit();
+
+	// scientist will try to talk to friends in this order:
+
+	m_szFriends[0] = "monster_scientist";
+	m_szFriends[1] = "monster_sitting_scientist";
+	m_szFriends[2] = "monster_barney";
 
 	// scientists speach group names (group names are in sentences.txt)
 

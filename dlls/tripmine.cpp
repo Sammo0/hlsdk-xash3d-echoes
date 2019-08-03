@@ -361,6 +361,7 @@ void CTripmine::Spawn()
 	pev->frame = 0;
 	pev->body = 3;
 	pev->sequence = TRIPMINE_GROUND;
+	pev->scale = 0.75f; // Scale tripmines down a bit, they are huge in VR
 	// ResetSequenceInfo();
 	pev->framerate = 0;
 
@@ -430,7 +431,7 @@ void CTripmine::PrimaryAttack( void )
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 )
 		return;
 
-	UTIL_MakeVectors( m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle );
+	UTIL_MakeVectors( m_pPlayer->GetWeaponViewAngles() );
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	Vector vecAiming = gpGlobals->v_forward;
 
@@ -444,7 +445,7 @@ void CTripmine::PrimaryAttack( void )
 #else
 	flags = 0;
 #endif
-	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usTripFire, 0.0, g_vecZero, g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
+	PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usTripFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 
 	if( tr.flFraction < 1.0 )
 	{
