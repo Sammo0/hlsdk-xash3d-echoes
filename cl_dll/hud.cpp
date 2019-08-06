@@ -435,6 +435,12 @@ int CHud::MsgFunc_Logo( const char *pszName,  int iSize, void *pbuf )
 
 float g_lastFOV = 0.0;
 
+int CHudBase::GetStereoDepthOffset()
+{
+	return (int)( ( CVAR_GET_FLOAT("vr_stereo_side") * -2.0f ) + 1.0f) * (ScreenWidth / 36.0f);
+}
+
+
 /*
 ============
 COM_FileBase

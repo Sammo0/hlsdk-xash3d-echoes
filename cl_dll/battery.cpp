@@ -108,8 +108,8 @@ int CHudBattery::Draw( float flTime )
 
 	int iOffset = ( m_prc1->bottom - m_prc1->top ) / 6;
 
-	y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2 - (ScreenHeight / 3);
-	x = ScreenWidth / 3;
+	y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2 - (ScreenHeight / 3.0f);
+	x = (int)(ScreenWidth / 3 + GetStereoDepthOffset());
 
 	// make sure we have the right sprite handles
 	if( !m_hSprite1 )

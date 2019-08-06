@@ -58,7 +58,7 @@ int CHudTrain::Draw( float fTime )
 
 		// This should show up to the right and part way up the armor number
 		y = (ScreenHeight * 0.6f) - SPR_Height( m_hSprite, 0 ) - gHUD.m_iFontHeight;
-		x = ScreenWidth / 3 + SPR_Width( m_hSprite, 0 ) / 4;
+		x = (int)(ScreenWidth / 3 + SPR_Width( m_hSprite, 0 ) / 4 + GetStereoDepthOffset() );
 
 		SPR_DrawAdditive( m_iPos - 1, x, y, NULL );
 	}

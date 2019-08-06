@@ -79,6 +79,7 @@ public:
 	virtual void Think( void ) { return; }
 	virtual void Reset( void ) { return; }
 	virtual void InitHUDData( void ) {}		// called every time a server is connected to
+	static int GetStereoDepthOffset();
 };
 
 struct HUDLIST

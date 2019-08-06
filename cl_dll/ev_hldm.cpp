@@ -404,9 +404,19 @@ void EV_HLDM_FireBullets( int idx, float *forward, float *right, float *up, int 
 		}//But other guns already have their spread randomized in the synched spread.
 		else
 		{
+			//If stabiliased, reduce the spread
+			float stabilised = gEngfuncs.pfnGetCvarFloat("vr_weapon_stabilised");
+			float spreadX = flSpreadX;
+			float spreadY = flSpreadY;
+			if (stabilised != 0.0f)
+			{
+				spreadX *= 0.6f;
+				spreadY *= 0.6f;
+			}
+
 			for( i = 0 ; i < 3; i++ )
 			{
-				vecDir[i] = vecDirShooting[i] + flSpreadX * right[i] + flSpreadY * up [i];
+				vecDir[i] = vecDirShooting[i] + spreadX * right[i] + spreadY * up [i];
 				vecEnd[i] = vecSrc[i] + flDistance * vecDir[i];
 			}
 		}
