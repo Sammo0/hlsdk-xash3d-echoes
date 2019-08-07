@@ -236,6 +236,8 @@ void CMP5::SecondaryAttack( void )
 
 void CMP5::Reload( void )
 {
+	CBasePlayerWeapon::Reload();
+
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 || m_iClip == MP5_MAX_CLIP )
 		return;
 

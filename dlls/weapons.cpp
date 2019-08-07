@@ -686,13 +686,15 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 	}
 }
 
+CBeam* CBasePlayerWeapon::g_pLaser = NULL;
+
 void CBasePlayerWeapon::KillLaser( void )
 {
 #ifndef CLIENT_DLL
-	if( m_pLaser )
+	if( g_pLaser )
 	{
-		UTIL_Remove( m_pLaser );
-		m_pLaser = NULL;
+		UTIL_Remove( g_pLaser );
+		g_pLaser = NULL;
 	}
 #endif
 }
@@ -721,13 +723,13 @@ void CBasePlayerWeapon::MakeLaser( void )
 
 	// set to follow laser spot
 	Vector vecTmpEnd = vecSrc + vecAiming * 2048 * flBeamLength;
-	if (!m_pLaser) {
-		m_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
+	if (!g_pLaser) {
+		g_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
 	}
-	m_pLaser->PointsInit( vecSrc, vecEnd );
-	m_pLaser->SetColor( 214, 34, 34 );
-	m_pLaser->SetScrollRate( 255 );
-	m_pLaser->SetBrightness( 96 );
+	g_pLaser->PointsInit( vecSrc, vecEnd );
+	g_pLaser->SetColor( 214, 34, 34 );
+	g_pLaser->SetScrollRate( 255 );
+	g_pLaser->SetBrightness( 96 );
 #endif
 }
 
@@ -1175,6 +1177,13 @@ int CBasePlayerWeapon::ExtractClipAmmo( CBasePlayerWeapon *pWeapon )
 
 	return pWeapon->m_pPlayer->GiveAmmo( iAmmo, (char *)pszAmmo1(), iMaxAmmo1() ); // , &m_iPrimaryAmmoType
 }
+
+void CBasePlayerWeapon::Reload( void )
+{
+	//Just stop the laser aim
+	KillLaser();
+}
+
 	
 //=========================================================
 // RetireWeapon - no more ammo for this gun, put it away.

@@ -484,6 +484,8 @@ void CCrossbow::SecondaryAttack()
 
 void CCrossbow::Reload( void )
 {
+	CBasePlayerWeapon::Reload();
+
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 || m_iClip == CROSSBOW_MAX_CLIP )
 		return;
 

@@ -284,6 +284,8 @@ void CRpgRocket :: FollowThink( void  )
 
 void CRpg::Reload( void )
 {
+	CBasePlayerWeapon::Reload();
+
 	int iResult;
 
 	if ( m_iClip == 1 )

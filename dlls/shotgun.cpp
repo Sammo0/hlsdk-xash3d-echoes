@@ -258,6 +258,8 @@ void CShotgun::SecondaryAttack( void )
 
 void CShotgun::Reload( void )
 {
+	CBasePlayerWeapon::Reload();
+
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0 || m_iClip == SHOTGUN_MAX_CLIP )
 		return;
 

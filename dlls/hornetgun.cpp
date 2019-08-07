@@ -246,6 +246,8 @@ void CHgun::SecondaryAttack( void )
 
 void CHgun::Reload( void )
 {
+	CBasePlayerWeapon::Reload();
+
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= HORNET_MAX_CARRY )
 		return;
 

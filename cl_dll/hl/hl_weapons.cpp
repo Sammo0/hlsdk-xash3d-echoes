@@ -316,6 +316,11 @@ Vector CBaseEntity::FireBulletsPlayer ( ULONG cShots, Vector vecSrc, Vector vecD
 	return Vector( x * vecSpread.x, y * vecSpread.y, 0.0 );
 }
 
+void CBasePlayerWeapon::Reload( void )
+{
+	//Just stop the laser aim
+	KillLaser();
+}
 
 void CBasePlayerWeapon::KillLaser( void )
 {
