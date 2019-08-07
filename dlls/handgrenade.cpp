@@ -118,73 +118,60 @@ void CHandGrenade::PrimaryAttack()
 		m_flStartThrow = gpGlobals->time;
 		m_flReleaseThrow = 0;
 
+		//Retain current position
+		for (int i = 0; i < 4; ++i)
+		{
+			m_WeaponPositions[i] = m_pPlayer->GetWeaponPosition();
+			m_WeaponPositionTimestamps[i] = gpGlobals->time;
+		}
+
 		SendWeaponAnim( HANDGRENADE_PINPULL );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;
 	}
+	else
+	{
+		//Record recent weapon position for trajectory
+		for (int i = 3; i != 0; --i)
+		{
+			m_WeaponPositions[i] = m_WeaponPositions[i-1];
+			m_WeaponPositionTimestamps[i] = m_WeaponPositionTimestamps[i-1];
+		}
+		m_WeaponPositions[0] =  m_pPlayer->GetWeaponPosition();
+		m_WeaponPositionTimestamps[0] =  gpGlobals->time;
+	}
 }
+
+#define VectorDistance(a, b) (sqrt( VectorDistance2( a, b )))
+#define VectorDistance2(a, b) (((a)[0] - (b)[0]) * ((a)[0] - (b)[0]) + ((a)[1] - (b)[1]) * ((a)[1] - (b)[1]) + ((a)[2] - (b)[2]) * ((a)[2] - (b)[2]))
 
 void CHandGrenade::WeaponIdle( void )
 {
 	if ( m_flReleaseThrow == 0 && m_flStartThrow )
 		m_flReleaseThrow = gpGlobals->time;
 
-	/*
-	if ( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
-		return;
-	*/
-
 	if ( m_flStartThrow )
 	{
-		/*
-		Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-
-		if ( angThrow.x < 0 )
-			angThrow.x = -10 + angThrow.x * ( ( 90 - 10 ) / 90.0 );
-		else
-			angThrow.x = -10 + angThrow.x * ( ( 90 + 10 ) / 90.0 );
-
-		float flVel = ( 90 - angThrow.x ) * 4;
-		if ( flVel > 500 )
-			flVel = 500;
-
-		UTIL_MakeVectors( angThrow );
-
-		Vector vecSrc = m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16;
-
-		Vector vecThrow = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity;
-
-		// alway explode 3 seconds after the pin was pulled
+		// explode 3 seconds after the pin was pulled
 		float time = m_flStartThrow - gpGlobals->time + 3.0;
 		if (time < 0)
 			time = 0;
 
-		CGrenade::ShootTimed( m_pPlayer->pev, vecSrc, vecThrow, time );
+		//Caclulate speed between oldest reading and second to last
+		float distance = VectorDistance(m_WeaponPositions[1], m_WeaponPositions[3]);
+		float t = m_WeaponPositionTimestamps[1] - m_WeaponPositionTimestamps[3];
+		float velocity = distance / t;
 
-		if ( flVel < 500 )
-		{
-			SendWeaponAnim( HANDGRENADE_THROW1 );
-		}
-		else if ( flVel < 1000 )
-		{
-			SendWeaponAnim( HANDGRENADE_THROW2 );
-		}
-		else
-		{
-			SendWeaponAnim( HANDGRENADE_THROW3 );
-		}
-		*/
+		//Calculate trajectory - probably WAY better ways of doing this
+		Vector trajectory = m_WeaponPositions[1] - m_WeaponPositions[3];
 
-		// alway explode 3 seconds after the pin was pulled
-		float time = m_flStartThrow - gpGlobals->time + 3.0;
-		if (time < 0)
-			time = 0;
+		// Reduce velocity by 1/5 for a bit of weight otherwise it is too light
+		Vector throwVelocity = trajectory * (velocity * 0.8f);
 
-		CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetWeaponPosition(), m_pPlayer->GetWeaponVelocity() * 2, time);
+		CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetWeaponPosition(), throwVelocity, time);
 
 		// player "shoot" animation
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-		m_flReleaseThrow = 0;
 		m_flStartThrow = 0;
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.5;
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5;

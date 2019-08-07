@@ -930,6 +930,10 @@ public:
 		return FALSE;
 #endif
 	}
+
+private:
+	Vector m_WeaponPositions[4];
+	float m_WeaponPositionTimestamps[4];
 };
 
 class CSatchel : public CBasePlayerWeapon
