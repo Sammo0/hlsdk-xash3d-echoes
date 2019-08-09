@@ -231,6 +231,12 @@ void CEgon::Attack( void )
 
 void CEgon::PrimaryAttack( void )
 {
+	m_fireMode = FIRE_NARROW;
+	Attack();
+}
+
+void CEgon::SecondaryAttack( void )
+{
 	m_fireMode = FIRE_WIDE;
 	Attack();
 }
@@ -367,7 +373,8 @@ void CEgon::Fire( const Vector &vecOrigSrc, const Vector &vecDir )
 		timedist = 1;
 	timedist = 1 - timedist;
 
-	UpdateEffect( tmpSrc, tr.vecEndPos, timedist );
+	Vector vecTmpEnd = tmpSrc + vecDir * 2048 * tr.flFraction;
+	UpdateEffect( tmpSrc, vecTmpEnd, timedist );
 }
 
 void CEgon::UpdateEffect( const Vector &startPoint, const Vector &endPoint, float timeBlend )
@@ -381,12 +388,16 @@ void CEgon::UpdateEffect( const Vector &startPoint, const Vector &endPoint, floa
 	m_pBeam->SetStartPos(endPoint);
 	m_pBeam->SetEndPos(m_pPlayer->GetWeaponPosition());
 	m_pBeam->SetBrightness( (int)( 255 - ( timeBlend * 180 )) );
-	m_pBeam->SetWidth( (int)( 40 - ( timeBlend * 20 ) ) );
-
 	if( m_fireMode == FIRE_WIDE )
+	{
 		m_pBeam->SetColor( (int)( 30 + ( 25 * timeBlend ) ), (int)( 30 + ( 30 * timeBlend ) ), (int)( 64 + 80 * fabs( sin( gpGlobals->time * 10 ) ) ) );
+		m_pBeam->SetWidth( (int)( 80 - ( timeBlend * 40 ) ) );
+	}
 	else
+	{
 		m_pBeam->SetColor( (int)( 60 + ( 25 * timeBlend ) ), (int)( 120 + ( 30 * timeBlend ) ), (int)( 64 + 80 * fabs( sin( gpGlobals->time *10 ) ) ) );
+		m_pBeam->SetWidth( (int)( 40 - ( timeBlend * 20 ) ) );
+	}
 
 	UTIL_SetOrigin( m_pSprite->pev, endPoint );
 	m_pSprite->pev->frame += 8 * gpGlobals->frametime;
@@ -408,7 +419,7 @@ void CEgon::CreateEffect( void )
 	m_pBeam->SetFlags( BEAM_FSINE );
 	m_pBeam->SetEndAttachment( 1 );
 	m_pBeam->pev->spawnflags |= SF_BEAM_TEMPORARY;	// Flag these to be destroyed on save/restore or level transition
-	m_pBeam->pev->flags |= FL_SKIPLOCALHOST;
+	//m_pBeam->pev->flags |= FL_SKIPLOCALHOST;
 	m_pBeam->pev->owner = m_pPlayer->edict();
 
 	m_pNoise = CBeam::BeamCreate( EGON_BEAM_SPRITE, 55 );
@@ -417,14 +428,14 @@ void CEgon::CreateEffect( void )
 	m_pNoise->SetBrightness( 100 );
 	m_pNoise->SetEndAttachment( 1 );
 	m_pNoise->pev->spawnflags |= SF_BEAM_TEMPORARY;
-	m_pNoise->pev->flags |= FL_SKIPLOCALHOST;
+	//m_pNoise->pev->flags |= FL_SKIPLOCALHOST;
 	m_pNoise->pev->owner = m_pPlayer->edict();
 
 	m_pSprite = CSprite::SpriteCreate( EGON_FLARE_SPRITE, pev->origin, FALSE );
 	m_pSprite->pev->scale = 1.0;
 	m_pSprite->SetTransparency( kRenderGlow, 255, 255, 255, 255, kRenderFxNoDissipation );
 	m_pSprite->pev->spawnflags |= SF_SPRITE_TEMPORARY;
-	m_pSprite->pev->flags |= FL_SKIPLOCALHOST;
+	//m_pSprite->pev->flags |= FL_SKIPLOCALHOST;
 	m_pSprite->pev->owner = m_pPlayer->edict();
 
 	if( m_fireMode == FIRE_WIDE )

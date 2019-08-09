@@ -109,6 +109,6 @@ Add game specific, client-side objects here
 */
 void Game_AddObjects( void )
 {
-	if( pBeam || pBeam2 || pFlare )	// Vit_amiN: egon flare added
-		UpdateBeams();
+//	if( pBeam || pBeam2 || pFlare )	// Vit_amiN: egon flare added
+//		UpdateBeams();
 }

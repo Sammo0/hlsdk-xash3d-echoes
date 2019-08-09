@@ -1488,9 +1488,9 @@ enum EGON_FIREMODE
 
 #define ARRAYSIZE(p)		( sizeof(p) /sizeof(p[0]) )
 
-BEAM *pBeam;
-BEAM *pBeam2;
-TEMPENTITY *pFlare;	// Vit_amiN: egon's beam flare
+BEAM *pBeam = NULL;
+BEAM *pBeam2 = NULL;
+TEMPENTITY *pFlare = NULL;	// Vit_amiN: egon's beam flare
 
 void EV_EgonFlareCallback( struct tempent_s *ent, float frametime, float currenttime )
 {
@@ -1573,7 +1573,7 @@ void EV_EgonFire( event_args_t *args )
 
 			gEngfuncs.pEventAPI->EV_PopPMStates();
 
-			int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( EGON_BEAM_SPRITE );
+/*			int iBeamModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex( EGON_BEAM_SPRITE );
 
 			float r = 50.0f;
 			float g = 50.0f;
@@ -1594,6 +1594,7 @@ void EV_EgonFire( event_args_t *args )
 
 			// Vit_amiN: egon beam flare
 			pFlare = gEngfuncs.pEfxAPI->R_TempSprite( tr.endpos, vec3_origin, 1.0, gEngfuncs.pEventAPI->EV_FindModelIndex( EGON_FLARE_SPRITE ), kRenderGlow, kRenderFxNoDissipation, 1.0, 99999, FTENT_SPRCYCLE | FTENT_PERSIST );
+*/
 		}
 	}
 

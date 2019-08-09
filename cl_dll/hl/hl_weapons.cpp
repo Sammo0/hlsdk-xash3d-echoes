@@ -322,13 +322,15 @@ void CBasePlayerWeapon::Reload( void )
 	KillLaser();
 }
 
+CBeam* CBasePlayerWeapon::g_pLaser = NULL;
+
 void CBasePlayerWeapon::KillLaser( void )
 {
 #ifndef CLIENT_DLL
-	if( m_pLaser )
+	if( g_pLaser )
 	{
-		UTIL_Remove( m_pLaser );
-		m_pLaser = NULL;
+		UTIL_Remove( g_pLaser );
+		g_pLaser = NULL;
 	}
 #endif
 }
@@ -357,13 +359,16 @@ void CBasePlayerWeapon::MakeLaser( void )
 
 	// set to follow laser spot
 	Vector vecTmpEnd = vecSrc + vecAiming * 2048 * flBeamLength;
-	if (!m_pLaser) {
-		m_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
+	if (!g_pLaser) {
+		g_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
 	}
-	m_pLaser->PointsInit( vecSrc, vecEnd );
-	m_pLaser->SetColor( 214, 34, 34 );
-	m_pLaser->SetScrollRate( 255 );
-	m_pLaser->SetBrightness( 96 );
+	g_pLaser->PointsInit( vecSrc, vecTmpEnd );
+	g_pLaser->SetColor( 214, 34, 34 );
+	g_pLaser->SetScrollRate( 255 );
+	g_pLaser->SetBrightness( 96 );
+	g_pLaser->pev->spawnflags |= SF_BEAM_TEMPORARY;	// Flag these to be destroyed on save/restore or level transition
+	//g_pLaser->pev->flags |= FL_SKIPLOCALHOST;
+	g_pLaser->pev->owner = m_pPlayer->edict();
 #endif
 }
 
