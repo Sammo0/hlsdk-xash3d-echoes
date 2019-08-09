@@ -83,16 +83,12 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 		cvar_s	*vr_worldscale = gEngfuncs.pfnGetCvarPointer( "vr_worldscale" );
 		cvar_s	*vr_weapon_pitchadjust = gEngfuncs.pfnGetCvarPointer( "vr_weapon_pitchadjust" );
 
-		Vector3 weaponOriginInVRSpace = pparams->weapon.org;
-		//
 		//(left/right, forward/backward, up/down)
-		Vector weaponOriginInRelativeHLSpace(-weaponOriginInVRSpace.z * vr_worldscale->value, -weaponOriginInVRSpace.x * vr_worldscale->value, weaponOriginInVRSpace.y * vr_worldscale->value);
-
 		cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
 		Vector clientPosition = pparams->vieworg;
-		positions.weapon.offset =  Vector(weaponOriginInRelativeHLSpace.x, weaponOriginInRelativeHLSpace.y, clientPosition.z + weaponOriginInRelativeHLSpace.z);
+		positions.weapon.offset =  Vector(pparams->weapon.org.x, pparams->weapon.org.y, clientPosition.z + pparams->weapon.org.z);
 
-		Vector weaponOrigin = clientPosition + weaponOriginInRelativeHLSpace;
+		Vector weaponOrigin = clientPosition + pparams->weapon.org;
 		VectorCopy(weaponOrigin, viewent->origin);
 		VectorCopy(weaponOrigin, viewent->curstate.origin);
 		VectorCopy(weaponOrigin, viewent->latched.prevorigin);
@@ -107,7 +103,7 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 				//First remove weapon pitch adjust
 				viewent->angles[0] -= vr_weapon_pitchadjust->value;
 				//Now incline forwards a bit
-				viewent->angles[0] -= 45.0f;
+				viewent->angles[0] -= 30.0f;
 				break;
 				//These just need the adjustment removing, they aren't aimed weapons
 			case WEAPON_HANDGRENADE:
@@ -125,11 +121,8 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 		VectorCopy(viewent->angles, viewent->curstate.angles);
 		VectorCopy(viewent->angles, viewent->latched.prevangles);
 
-
-		Vector velocityInVRSpace = pparams->weapon.velocity;
-		Vector velocityInHLSpace(-velocityInVRSpace.z * vr_worldscale->value, -velocityInVRSpace.x * vr_worldscale->value, velocityInVRSpace.y * vr_worldscale->value);
-		viewent->curstate.velocity = velocityInHLSpace;
-		positions.weapon.velocity = velocityInHLSpace;
+		viewent->curstate.velocity = pparams->weapon.velocity;
+		positions.weapon.velocity = pparams->weapon.velocity;
 	}
 }
 
