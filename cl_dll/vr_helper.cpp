@@ -107,7 +107,7 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 				//First remove weapon pitch adjust
 				viewent->angles[0] -= vr_weapon_pitchadjust->value;
 				//Now incline forwards a bit
-				viewent->angles[0] -= 25.0f;
+				viewent->angles[0] -= 45.0f;
 				break;
 				//These just need the adjustment removing, they aren't aimed weapons
 			case WEAPON_HANDGRENADE:
