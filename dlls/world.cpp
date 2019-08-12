@@ -526,6 +526,10 @@ void CWorld::Precache( void )
 		PRECACHE_MODEL( "models/agibs.mdl" );
 	}
 
+	//Precache our flashlight model
+	PRECACHE_MODEL( "models/v_torch.mdl" );
+
+
 	PRECACHE_SOUND( "weapons/ric1.wav" );
 	PRECACHE_SOUND( "weapons/ric2.wav" );
 	PRECACHE_SOUND( "weapons/ric3.wav" );
