@@ -3280,6 +3280,18 @@ BOOL CBasePlayer::FlashlightIsOn( void )
 	return FBitSet( pev->effects, EF_DIMLIGHT );
 }
 
+BOOL CBasePlayer::FlashlightInInventory( void ) {
+	if (!g_pGameRules->FAllowFlashlight()) {
+		return FALSE;
+	}
+
+	if ((pev->weapons & (1 << WEAPON_SUIT))) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void CBasePlayer::FlashlightTurnOn( void )
 {
 	if( !g_pGameRules->FAllowFlashlight() )
@@ -3787,6 +3799,13 @@ void CBasePlayer::ItemPostFrame()
 	}
 
 	ImpulseCommands();
+
+	//Inform client we have the flashlight in our inventory (used in VR for off-hand flashlight model)
+	if (FlashlightInInventory()) {
+		pev->flags |= FL_HAS_FLASHLIGHT;
+	} else {
+		pev->flags &= ~FL_HAS_FLASHLIGHT;
+	}
 
 	if( !m_pActiveItem )
 		return;
