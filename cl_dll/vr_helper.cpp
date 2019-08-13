@@ -93,27 +93,24 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 		VectorCopy(weaponOrigin, viewent->curstate.origin);
 		VectorCopy(weaponOrigin, viewent->latched.prevorigin);
 
-
-		positions.weapon.angles = pparams->weapon.angles;
-		viewent->angles = pparams->weapon.angles;
+		//Use correct angles
 		switch (positions.currentWeapon)
 		{
-			//Incline crowbar a bit closer to natural hand location (not too far, that causes weirdness)
 			case WEAPON_CROWBAR:
-				//First remove weapon pitch adjust
-				viewent->angles[0] -= vr_weapon_pitchadjust->value;
-				//Now incline forwards a bit
-				viewent->angles[0] -= 30.0f;
+				positions.weapon.angles = pparams->weapon.angles.melee;
+				viewent->angles = pparams->weapon.angles.melee;
 				break;
-				//These just need the adjustment removing, they aren't aimed weapons
 			case WEAPON_HANDGRENADE:
 			case WEAPON_TRIPMINE:
 			case WEAPON_SATCHEL:
 			case WEAPON_SNARK:
-				viewent->angles[0] -= vr_weapon_pitchadjust->value;
+				positions.weapon.angles = pparams->weapon.angles.unadjusted;
+				viewent->angles = pparams->weapon.angles.unadjusted;
 				break;
 			default:
 				//Everything else is adjusted correctly
+				positions.weapon.angles = pparams->weapon.angles.adjusted;
+				viewent->angles = pparams->weapon.angles.adjusted;
 				break;
 		}
 
