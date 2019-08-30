@@ -164,8 +164,8 @@ void CHandGrenade::WeaponIdle( void )
 		//Calculate trajectory - probably WAY better ways of doing this
 		Vector trajectory = m_WeaponPositions[1] - m_WeaponPositions[3];
 
-		// Reduce velocity by 1/5 for a bit of weight otherwise it is too light
-		Vector throwVelocity = trajectory * (velocity * 0.8f);
+		// Reduce velocity by 1/2 for a bit of weight otherwise it is too light
+		Vector throwVelocity = trajectory * (velocity * 0.5f);
 
 		CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetWeaponPosition(), throwVelocity, time);
 
