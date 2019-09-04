@@ -38,7 +38,7 @@ public:
 	virtual mstudioanim_t *StudioGetAnim( model_t *m_pSubModel, mstudioseqdesc_t *pseqdesc );
 
 	// Interpolate model position and angles and set up matrices
-	virtual void StudioSetUpTransform( int trivial_accept );
+	virtual void StudioSetUpTransform( int flags );
 
 	// Set up model bone positions
 	virtual void StudioSetupBones( void );	
@@ -119,6 +119,8 @@ public:
 	cvar_t			*m_pCvarDeveloper;
 	// Draw entities bone hit boxes, etc?
 	cvar_t			*m_pCvarDrawEntities;
+	// Is this a left handed player?
+	cvar_t			*m_pCvarLeftHanded;
 
 	// The entity which we are currently rendering.
 	cl_entity_t		*m_pCurrentEntity;		

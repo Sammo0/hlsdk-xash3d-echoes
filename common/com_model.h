@@ -30,6 +30,9 @@ typedef vec_t		vec4_t[4];
 #define STUDIO_RENDER	1
 #define STUDIO_EVENTS	2
 
+//Probably shouldn't do this.. but adding a flag to indicate we are rendering the weapon
+#define STUDIO_VIEWMODEL	4
+
 #define ZISCALE		((float)0x8000)
 
 #define MIPLEVELS		4
