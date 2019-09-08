@@ -2073,7 +2073,7 @@ void PM_Duck( void )
 					pmove->bInDuck = false;
 
 					// HACKHACK - Fudge for collision bug - no time to fix this properly
-					if( pmove->onground != -1  && ( pmove->cmd.buttons & IN_DUCK ))
+					if( pmove->onground != -1)
 					{
 						for( i = 0; i < 3; i++ )
 						{
