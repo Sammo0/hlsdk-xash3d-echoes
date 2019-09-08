@@ -55,7 +55,6 @@ int CL_ButtonBits( int );
 extern cvar_t *in_joystick;
 
 int	in_impulse = 0;
-int	in_cancel = 0;
 
 cvar_t	*m_pitch;
 cvar_t	*m_yaw;
@@ -122,6 +121,10 @@ kbutton_t	in_alt1;
 kbutton_t	in_score;
 kbutton_t	in_break;
 kbutton_t	in_graph;  // Display the netgraph
+
+//Special case for physical crouching
+kbutton_t	in_crouch;
+
 
 typedef struct kblist_s
 {
@@ -589,6 +592,17 @@ void IN_DuckUp( void )
 	KeyUp( &in_duck );
 }
 
+void IN_CrouchDown( void )
+{
+	KeyDown( &in_crouch );
+	gHUD.m_Spectator.HandleButtonsDown( IN_DUCK );
+}
+
+void IN_CrouchUp( void )
+{
+	KeyUp( &in_crouch );
+}
+
 void IN_ReloadDown( void )
 {
 	KeyDown( &in_reload );
@@ -628,13 +642,6 @@ void IN_AttackDown( void )
 void IN_AttackUp( void )
 {
 	KeyUp( &in_attack );
-	in_cancel = 0;
-}
-
-// Special handling
-void IN_Cancel( void )
-{
-	in_cancel = 1;
 }
 
 void IN_Impulse( void )
@@ -932,9 +939,9 @@ int CL_ButtonBits( int bResetState )
 		bits |= IN_USE;
 	}
 
-	if( in_cancel )
+	if( in_crouch.state & 3 )
 	{
-		bits |= IN_CANCEL;
+		bits |= IN_CROUCH;
 	}
 
 	if( in_left.state & 3 )
@@ -1078,6 +1085,8 @@ void InitInput( void )
 	gEngfuncs.pfnAddCommand( "-jlook", IN_JLookUp );
 	gEngfuncs.pfnAddCommand( "+duck", IN_DuckDown );
 	gEngfuncs.pfnAddCommand( "-duck", IN_DuckUp );
+	gEngfuncs.pfnAddCommand( "+crouch", IN_CrouchDown );
+	gEngfuncs.pfnAddCommand( "-crouch", IN_CrouchUp );
 	gEngfuncs.pfnAddCommand( "+reload", IN_ReloadDown );
 	gEngfuncs.pfnAddCommand( "-reload", IN_ReloadUp );
 	gEngfuncs.pfnAddCommand( "+alt1", IN_Alt1Down );

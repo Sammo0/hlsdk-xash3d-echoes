@@ -1749,7 +1749,7 @@ int PM_CheckStuck( void )
 
 	// If player is flailing while stuck in another player ( should never happen ), then see
 	//  if we can't "unstick" them forceably.
-	if( pmove->cmd.buttons & ( IN_JUMP | IN_DUCK | IN_ATTACK ) && ( pmove->physents[hitent].player != 0 ) )
+	if( pmove->cmd.buttons & ( IN_JUMP | IN_DUCK | IN_CROUCH | IN_ATTACK ) && ( pmove->physents[hitent].player != 0 ) )
 	{
 		float x, y, z;
 		float xystep = 8.0;
@@ -1993,6 +1993,11 @@ void PM_UnDuck( void )
 	}
 }
 
+int duckTriggered()
+{
+	return (pmove->cmd.buttons & IN_DUCK) | (pmove->cmd.buttons & IN_CROUCH);
+}
+
 void PM_Duck( void )
 {
 	int i;
@@ -2014,6 +2019,15 @@ void PM_Duck( void )
 		pmove->oldbuttons &= ~IN_DUCK;
 	}
 
+	if( pmove->cmd.buttons & IN_CROUCH )
+	{
+		pmove->oldbuttons |= IN_CROUCH;
+	}
+	else
+	{
+		pmove->oldbuttons &= ~IN_CROUCH;
+	}
+
 	// Prevent ducking if the iuser3 variable is set
 	if( pmove->iuser3 || pmove->dead )
 	{
@@ -2032,11 +2046,12 @@ void PM_Duck( void )
 		pmove->cmd.upmove *= PLAYER_DUCKING_MULTIPLIER;
 	}
 
-	if( ( pmove->cmd.buttons & IN_DUCK ) || ( pmove->bInDuck ) || ( pmove->flags & FL_DUCKING ) )
+	if(duckTriggered() || ( pmove->bInDuck ) || ( pmove->flags & FL_DUCKING ) )
 	{
-		if( pmove->cmd.buttons & IN_DUCK )
+		if(duckTriggered() )
 		{
-			if( (nButtonPressed & IN_DUCK ) && !( pmove->flags & FL_DUCKING ) )
+			if( ( (nButtonPressed & IN_DUCK ) | (nButtonPressed & IN_CROUCH ))
+				&& !( pmove->flags & FL_DUCKING ) )
 			{
 				// Use 1 second so super long jump will work
 				pmove->flDuckTime = 1000;
@@ -2051,12 +2066,14 @@ void PM_Duck( void )
 				if( ( (float)pmove->flDuckTime / 1000.0 <= ( 1.0 - TIME_TO_DUCK ) ) || ( pmove->onground == -1 ) )
 				{
 					pmove->usehull = 1;
-					pmove->view_ofs[2] = VEC_DUCK_VIEW;
+					if ( pmove->cmd.buttons & IN_DUCK ) {
+						pmove->view_ofs[2] = VEC_DUCK_VIEW;
+					}
 					pmove->flags |= FL_DUCKING;
 					pmove->bInDuck = false;
 
 					// HACKHACK - Fudge for collision bug - no time to fix this properly
-					if( pmove->onground != -1 )
+					if( pmove->onground != -1  && ( pmove->cmd.buttons & IN_DUCK ))
 					{
 						for( i = 0; i < 3; i++ )
 						{
@@ -2069,7 +2086,7 @@ void PM_Duck( void )
 						PM_CatagorizePosition();
 					}
 				}
-				else
+				else if ( pmove->cmd.buttons & IN_DUCK )
 				{
 					float fMore = VEC_DUCK_HULL_MIN - VEC_HULL_MIN;
 

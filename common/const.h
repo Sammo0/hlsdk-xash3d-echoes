@@ -660,7 +660,7 @@
 #define IN_FORWARD			(1<<3)
 #define IN_BACK			(1<<4)
 #define IN_USE			(1<<5)
-#define IN_CANCEL			(1<<6)
+#define IN_CROUCH			(1<<6)
 #define IN_LEFT			(1<<7)
 #define IN_RIGHT			(1<<8)
 #define IN_MOVELEFT			(1<<9)
