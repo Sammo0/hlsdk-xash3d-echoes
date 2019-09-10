@@ -76,6 +76,7 @@ SRCS_C+=../pm_shared/pm_math.c
 SRCS_C+=../pm_shared/pm_shared.c
 SRCS+=./saytext.cpp
 SRCS+=./status_icons.cpp
+SRCS+=./stealth.cpp
 SRCS+=./statusbar.cpp
 SRCS+=./studio_util.cpp
 SRCS+=./StudioModelRenderer.cpp

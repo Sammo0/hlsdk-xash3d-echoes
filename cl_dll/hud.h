@@ -200,6 +200,22 @@ private:
 //
 //-----------------------------------------------------
 //
+class CHudStealth : public CHudBase
+{
+public:
+	int Init( void );
+	int VidInit( void );
+	int Draw( float flTime );
+	int MsgFunc_Stealth( const char *pszName, int iSize, void *pbuf );
+
+private:
+	HSPRITE m_hSprite;
+	int m_iPos;
+};
+
+//
+//-----------------------------------------------------
+//
 // REMOVED: Vgui has replaced this.
 //
 class CHudMOTD : public CHudBase
@@ -624,6 +640,7 @@ public:
 	CHudGeiger		m_Geiger;
 	CHudBattery		m_Battery;
 	CHudTrain		m_Train;
+	CHudStealth		m_Stealth;
 	CHudFlashlight	m_Flash;
 	CHudMessage		m_Message;
 	CHudStatusBar   m_StatusBar;

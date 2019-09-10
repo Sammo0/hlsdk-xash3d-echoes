@@ -126,7 +126,7 @@ int CHudFlashlight::Draw( float flTime )
 
 	ScaleColors( r, g, b, a );
 
-	y = (int)(( m_prc1->bottom - m_prc2->top ) / 2 + (ScreenHeight * 0.3f));
+	y = (int)(( m_prc1->bottom - m_prc2->top ) / 2 + (ScreenHeight * 0.35f));
 	x = (int)((ScreenWidth * 0.65f) - m_iWidth - ( m_iWidth / 2 ) + GetStereoDepthOffset() );
 
 	// Draw the flashlight casing

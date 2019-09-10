@@ -153,6 +153,7 @@ int gmsgFade = 0;
 int gmsgSelAmmo = 0;
 int gmsgFlashlight = 0;
 int gmsgFlashBattery = 0;
+int gmsgStealth = 0;
 int gmsgResetHUD = 0;
 int gmsgInitHUD = 0;
 int gmsgShowGameTitle = 0;
@@ -201,6 +202,7 @@ void LinkUserMessages( void )
 	gmsgGeigerRange = REG_USER_MSG( "Geiger", 1 );
 	gmsgFlashlight = REG_USER_MSG( "Flashlight", 2 );
 	gmsgFlashBattery = REG_USER_MSG( "FlashBat", 1 );
+	gmsgStealth = REG_USER_MSG( "Stealth", 1 );
 	gmsgHealth = REG_USER_MSG( "Health", 1 );
 	gmsgDamage = REG_USER_MSG( "Damage", 12 );
 	gmsgBattery = REG_USER_MSG( "Battery", 2);
@@ -4048,6 +4050,18 @@ void CBasePlayer::UpdateClientData( void )
 		m_iTrain &= ~TRAIN_NEW;
 	}
 
+	//Send "stealth" flag
+	{
+		ASSERT( gmsgStealth > 0 );
+
+		int val = ( FBitSet( pev->flags, FL_DUCKING ) ) ? 1 : 0;
+
+		// send "health" update message
+		MESSAGE_BEGIN( MSG_ONE, gmsgStealth, NULL, pev );
+			WRITE_BYTE( val );
+		MESSAGE_END();
+	}
+
 	//
 	// New Weapon?
 	//
@@ -4639,43 +4653,13 @@ void CBasePlayer::UpdateVRRelatedPositions(const Vector & hmdOffset, const Vecto
 	// Then get headset position:
 	Vector hmdPosition = clientOrigin + hmdOffset;
 
-	// TODO: Check if headset position is in wall, if so: take previous position (from the player's perspective, this will feel like pushing the level away when they run into a wall)
-	/*
-	if (hmdPosition is in wall)
-	{
-		hmdPosition = clientOrigin + vr_lastHMDOffset;
-		pev->view_ofs = vr_lastHMDOffset;
-	}
-	else
-	{
-		pev->view_ofs = hmdOffset;
-		vr_lastHMDOffset = hmdOffset;
-	}
-	*/
-
 	// Get new server origin from headset x/y coordinates
 	Vector newOrigin = Vector(hmdPosition.x, hmdPosition.y, clientOrigin.z);
 	pev->origin = newOrigin;
 
-	//vr_ClientOriginOffset.x = clientOrigin.x - pev->origin.x;
-	//vr_ClientOriginOffset.y = clientOrigin.y - pev->origin.y;
-
 	vr_weaponOffset = weaponOffset;
 	vr_weaponAngles = weaponAngles;
 	vr_weaponVelocity = weaponVelocity;
-
-	/*
-   // TODO: Check view_ofs.z and (un)set player in duck mode, depending on height
-   if (pev->view_ofs.z <= duck height)
-   {
-       set player in duck (hullsize and flags)
-   }
-   else
-   {
-       unset player in duck (hullsize and flags)
-   }
-   */
-
 }
 const Vector CBasePlayer::GetWeaponPosition()
 {
