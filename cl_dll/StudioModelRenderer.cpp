@@ -62,7 +62,6 @@ void CStudioModelRenderer::Init( void )
 	m_pCvarHiModels			= IEngineStudio.GetCvar( "cl_himodels" );
 	m_pCvarDeveloper		= IEngineStudio.GetCvar( "developer" );
 	m_pCvarDrawEntities		= IEngineStudio.GetCvar( "r_drawentities" );
-    m_pCvarMirrorWeapons	= IEngineStudio.GetCvar( "vr_mirror_weapons" );
 
 	m_pChromeSprite			= IEngineStudio.GetChromeSprite();
 
@@ -530,7 +529,13 @@ void CStudioModelRenderer::StudioSetUpTransform( int flags )
 	mirrormatrix[0][0] = 1;
 
 	//If this is the player model and they specifically requested mirrored weapons
+
+    if (m_pCvarMirrorWeapons == NULL) {
+        m_pCvarMirrorWeapons = IEngineStudio.GetCvar("vr_mirror_weapons");
+    }
+
 	if ((flags & STUDIO_VIEWMODEL) &&
+            m_pCvarMirrorWeapons != NULL &&
 			m_pCvarMirrorWeapons->value) {
         mirrormatrix[1][1] = -1;
     } else
