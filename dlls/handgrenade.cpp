@@ -119,7 +119,7 @@ void CHandGrenade::PrimaryAttack()
 		{
 			//Use start throw to record when the grenade is going to explode.. add a small amount of unpredictability to the fuse
 			//length which is common for chemical fused grenades apparently
-			m_flStartThrow = gpGlobals->time + 3.0f + UTIL_SharedRandomFloat( m_pPlayer->random_seed, -0.25f, 0.25f );
+			m_flStartThrow = gpGlobals->time + 5.0f + UTIL_SharedRandomFloat( m_pPlayer->random_seed, -0.25f, 0.25f );
 			m_flReleaseThrow = 0;
 
 			//Retain current position

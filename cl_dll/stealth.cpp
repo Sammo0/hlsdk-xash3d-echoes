@@ -54,8 +54,8 @@ int CHudStealth::Draw( float fTime )
     UnpackRGB( r, g, b, RGB_YELLOWISH );
     SPR_Set( m_hSprite, r, g, b );
 
-    y = (ScreenHeight * 0.35f) + (SPR_Height( m_hSprite, 0 )/2);
-    x = (int)((ScreenWidth * 0.68f) + SPR_Width( m_hSprite, 0 ) / 4 + GetStereoDepthOffset() );
+    y = (int)(ScreenHeight * 0.36f);
+    x = (int)((ScreenWidth * 0.66f) + GetStereoDepthOffset() );
 
     SPR_DrawAdditive( 0, x, y, NULL );
 

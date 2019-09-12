@@ -410,8 +410,8 @@ void EV_HLDM_FireBullets( int idx, float *forward, float *right, float *up, int 
 			float spreadY = flSpreadY;
 			if (stabilised != 0.0f)
 			{
-				spreadX *= 0.6f;
-				spreadY *= 0.6f;
+				spreadX *= 0.45f;
+				spreadY *= 0.45f;
 			}
 
 			for( i = 0 ; i < 3; i++ )

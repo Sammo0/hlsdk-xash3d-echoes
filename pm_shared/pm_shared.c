@@ -48,7 +48,7 @@ playermove_t *pmove = NULL;
 #define TIME_TO_DUCK		0.4
 #define VEC_DUCK_HULL_MIN	-18
 #define VEC_DUCK_HULL_MAX	18
-#define VEC_DUCK_VIEW		12
+#define VEC_DUCK_VIEW		10
 #define PM_DEAD_VIEWHEIGHT	-8
 #define MAX_CLIMB_SPEED		200
 #define STUCK_MOVEUP		1
@@ -2050,7 +2050,7 @@ void PM_Duck( void )
 	{
 		if(duckTriggered() )
 		{
-			if( ( (nButtonPressed & IN_DUCK ) | (nButtonPressed & IN_CROUCH ))
+			if( ( (nButtonPressed & IN_DUCK ) || (nButtonPressed & IN_CROUCH ))
 				&& !( pmove->flags & FL_DUCKING ) )
 			{
 				// Use 1 second so super long jump will work
@@ -2062,13 +2062,19 @@ void PM_Duck( void )
 
 			if( pmove->bInDuck )
 			{
-				// Finish ducking immediately if duck time is over or not on ground
-				if( ( (float)pmove->flDuckTime / 1000.0 <= ( 1.0 - TIME_TO_DUCK ) ) || ( pmove->onground == -1 ) )
+				// Finish ducking immediately if duck time is over or not on ground or player is crouching
+				if( ( (float)pmove->flDuckTime / 1000.0 <= ( 1.0 - TIME_TO_DUCK ) ) || ( pmove->onground == -1 )  || (nButtonPressed & IN_CROUCH ) )
 				{
 					pmove->usehull = 1;
-					if ( pmove->cmd.buttons & IN_DUCK ) {
+					if ( pmove->cmd.buttons & IN_DUCK )
+					{
 						pmove->view_ofs[2] = VEC_DUCK_VIEW;
 					}
+					else
+                    {
+                        pmove->view_ofs[2] = VEC_VIEW - VEC_DUCK_HULL_MIN;
+                    }
+
 					pmove->flags |= FL_DUCKING;
 					pmove->bInDuck = false;
 
