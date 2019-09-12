@@ -119,8 +119,8 @@ public:
 	cvar_t			*m_pCvarDeveloper;
 	// Draw entities bone hit boxes, etc?
 	cvar_t			*m_pCvarDrawEntities;
-	// Is this a left handed player?
-	cvar_t			*m_pCvarLeftHanded;
+	// Does this player want the weapons mirrored?
+	cvar_t			*m_pCvarMirrorWeapons;
 
 	// The entity which we are currently rendering.
 	cl_entity_t		*m_pCurrentEntity;		

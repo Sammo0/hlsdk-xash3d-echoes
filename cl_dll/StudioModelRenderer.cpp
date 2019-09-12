@@ -62,7 +62,7 @@ void CStudioModelRenderer::Init( void )
 	m_pCvarHiModels			= IEngineStudio.GetCvar( "cl_himodels" );
 	m_pCvarDeveloper		= IEngineStudio.GetCvar( "developer" );
 	m_pCvarDrawEntities		= IEngineStudio.GetCvar( "r_drawentities" );
-    m_pCvarLeftHanded		= IEngineStudio.GetCvar( "hand" );
+    m_pCvarMirrorWeapons	= IEngineStudio.GetCvar( "vr_mirror_weapons" );
 
 	m_pChromeSprite			= IEngineStudio.GetChromeSprite();
 
@@ -89,7 +89,7 @@ CStudioModelRenderer::CStudioModelRenderer( void )
 	m_pCvarHiModels		= NULL;
 	m_pCvarDeveloper	= NULL;
 	m_pCvarDrawEntities	= NULL;
-    m_pCvarLeftHanded	= NULL;
+	m_pCvarMirrorWeapons= NULL;
 	m_pChromeSprite		= NULL;
 	m_pStudioModelCount	= NULL;
 	m_pModelsDrawn		= NULL;
@@ -529,11 +529,12 @@ void CStudioModelRenderer::StudioSetUpTransform( int flags )
 	memset(mirrormatrix, 0, sizeof(float) * 12);
 	mirrormatrix[0][0] = 1;
 
-	//If this is the player model and they are left handed, then mirror
+	//If this is the player model and they specifically requested mirrored weapons
 	if ((flags & STUDIO_VIEWMODEL) &&
-            m_pCvarLeftHanded->value != 0.0f) {
+			m_pCvarMirrorWeapons->value) {
         mirrormatrix[1][1] = -1;
-    } else {
+    } else
+    {
 	    //Not mirroring, this is a simple identity matrix
         mirrormatrix[1][1] = 1;
 	}
