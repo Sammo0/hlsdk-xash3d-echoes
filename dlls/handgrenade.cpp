@@ -125,7 +125,7 @@ void CHandGrenade::PrimaryAttack()
 			//Retain current position
 			for (int i = 0; i < 4; ++i)
 			{
-				m_WeaponPositions[i] = m_pPlayer->GetWeaponPosition();
+				m_WeaponPositions[i] = (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
 				m_WeaponPositionTimestamps[i] = gpGlobals->time;
 			}
 
@@ -140,7 +140,7 @@ void CHandGrenade::PrimaryAttack()
 			{
 				//Oh dear, silly player still holding grenade and it is going to explode!
 				Vector nullVelocity;
-				CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetWeaponPosition(), nullVelocity, 0.1);
+				CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetWeaponPosition(), nullVelocity, 0.05f);
 
 				//Reset in case player survived that foolishness
 				m_flStartThrow = 0;
@@ -167,7 +167,8 @@ void CHandGrenade::PrimaryAttack()
 					m_WeaponPositions[i] = m_WeaponPositions[i-1];
 					m_WeaponPositionTimestamps[i] = m_WeaponPositionTimestamps[i-1];
 				}
-				m_WeaponPositions[0] =  m_pPlayer->GetWeaponPosition();
+
+				m_WeaponPositions[0] =  (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
 				m_WeaponPositionTimestamps[0] =  gpGlobals->time;
 			}
 		}
@@ -191,6 +192,9 @@ void CHandGrenade::WeaponIdle( void )
 
 		// Reduce velocity by 1/3 for a bit of weight otherwise it is too light
 		Vector throwVelocity = trajectory * (velocity * (2.0f/3.0f));
+
+		//Add in player velocity
+		throwVelocity = throwVelocity + m_pPlayer->pev->velocity;
 
 		// Calculate remaining fuse time
 		float fuseRemaining = m_flStartThrow - gpGlobals->time;

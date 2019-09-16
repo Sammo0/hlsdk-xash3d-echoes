@@ -309,6 +309,7 @@ void CBasePlayer::AddPointsToTeam( int score, BOOL bAllowNegativeScore ) { }
 
 // VR related functions
 extern struct cl_entity_s *GetViewEntity(void);
+extern struct cl_entity_s *GetEntity(int idx);
 const Vector CBasePlayer::GetWeaponPosition()
 {
     if (GetViewEntity())
@@ -319,6 +320,10 @@ const Vector CBasePlayer::GetWeaponPosition()
     {
         return g_vecZero;
     }
+}
+const Vector CBasePlayer::GetClientOrigin()
+{
+    return GetEntity(1)->curstate.origin;
 }
 const Vector CBasePlayer::GetWeaponAngles()
 {
