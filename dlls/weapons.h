@@ -962,7 +962,8 @@ public:
 
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
-	void Throw( void );
+	void PreThrow( void );
+	void Throw( Vector throwVelocity );
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -972,6 +973,10 @@ public:
 		return FALSE;
 #endif
 	}
+
+private:
+    Vector m_WeaponPositions[4];
+    float m_WeaponPositionTimestamps[4];
 };
 
 class CTripmine : public CBasePlayerWeapon

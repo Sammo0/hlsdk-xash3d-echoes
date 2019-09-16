@@ -330,7 +330,7 @@ void CSatchel::PrimaryAttack()
 	{
 	case SATCHEL_IDLE:
 		{
-			Throw();
+			PreThrow();
 		}
 		break;
 	case SATCHEL_READY:
@@ -366,22 +366,51 @@ void CSatchel::PrimaryAttack()
 
 void CSatchel::SecondaryAttack( void )
 {
-	if( m_chargeReady != SATCHEL_RELOAD )
+	PrimaryAttack();
+}
+
+void CSatchel::PreThrow()
+{
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
-		Throw();
+		if( !m_flStartThrow )
+		{
+			m_flStartThrow = gpGlobals->time;
+			m_flReleaseThrow = 0;
+
+			//Retain current position
+			for (int i = 0; i < 4; ++i)
+			{
+				m_WeaponPositions[i] = (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
+				m_WeaponPositionTimestamps[i] = gpGlobals->time;
+			}
+
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase(); //Kick in weapon idle as soon as trigger is released
+		}
+		else
+		{
+			//Record recent weapon position for trajectory
+			for (int i = 3; i != 0; --i)
+			{
+				m_WeaponPositions[i] = m_WeaponPositions[i-1];
+				m_WeaponPositionTimestamps[i] = m_WeaponPositionTimestamps[i-1];
+			}
+
+			m_WeaponPositions[0] =  (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
+			m_WeaponPositionTimestamps[0] =  gpGlobals->time;
+		}
 	}
 }
 
-void CSatchel::Throw( void )
+void CSatchel::Throw( Vector throwVelocity )
 {
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
 	{
 #ifndef CLIENT_DLL
 		Vector vecSrc = m_pPlayer->GetWeaponPosition();
-		Vector vecThrow = m_pPlayer->GetWeaponVelocity() * 1.5f;
 
 		CBaseEntity *pSatchel = Create( "monster_satchel", vecSrc, Vector( 0, 0, 0 ), m_pPlayer->edict() );
-		pSatchel->pev->velocity = vecThrow;
+		pSatchel->pev->velocity = throwVelocity;
 		pSatchel->pev->avelocity.y = 400;
 
 		m_pPlayer->pev->viewmodel = MAKE_STRING( "models/v_satchel_radio.mdl" );
@@ -404,6 +433,9 @@ void CSatchel::Throw( void )
 	}
 }
 
+#define VectorDistance(a, b) (sqrt( VectorDistance2( a, b )))
+#define VectorDistance2(a, b) (((a)[0] - (b)[0]) * ((a)[0] - (b)[0]) + ((a)[1] - (b)[1]) * ((a)[1] - (b)[1]) + ((a)[2] - (b)[2]) * ((a)[2] - (b)[2]))
+
 void CSatchel::WeaponIdle( void )
 {
 	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
@@ -412,9 +444,27 @@ void CSatchel::WeaponIdle( void )
 	switch( m_chargeReady )
 	{
 	case SATCHEL_IDLE:
-		SendWeaponAnim( SATCHEL_FIDGET1 );
-		// use tripmine animations
-		strcpy( m_pPlayer->m_szAnimExtention, "trip" );
+		if ( m_flStartThrow )
+		{
+			//Caclulate speed between oldest reading and second to last
+			float distance = VectorDistance(m_WeaponPositions[1], m_WeaponPositions[3]);
+			float t = m_WeaponPositionTimestamps[1] - m_WeaponPositionTimestamps[3];
+			float velocity = distance / t;
+
+			//Calculate trajectory
+			Vector trajectory = m_WeaponPositions[1] - m_WeaponPositions[3];
+
+			// Reduce velocity, this is heavy!
+			Vector throwVelocity = trajectory * (velocity * (0.4f));
+
+			//Add in player velocity
+			throwVelocity = throwVelocity + m_pPlayer->pev->velocity;
+
+			// throw it!
+			Throw( throwVelocity );
+
+			m_flStartThrow = 0;
+		}
 		break;
 	case SATCHEL_READY:
 		SendWeaponAnim( SATCHEL_RADIO_FIDGET1 );
