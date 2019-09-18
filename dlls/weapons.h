@@ -1027,7 +1027,9 @@ public:
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
-	int m_fJustThrown;
+
+    void PreThrow();
+    void Throw(Vector throwVelocity);
 
 	virtual BOOL UseDecrement( void )
 	{
@@ -1040,5 +1042,9 @@ public:
 
 private:
 	unsigned short m_usSnarkFire;
+
+private:
+    Vector m_WeaponPositions[4];
+    float m_WeaponPositionTimestamps[4];
 };
 #endif // WEAPONS_H

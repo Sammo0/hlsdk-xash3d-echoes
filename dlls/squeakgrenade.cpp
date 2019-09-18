@@ -483,17 +483,47 @@ void CSqueak::Holster( int skiplocal /* = 0 */ )
 	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/null.wav", 1.0, ATTN_NORM );
 }
 
-void CSqueak::PrimaryAttack()
+void CSqueak::PreThrow()
+{
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+	{
+		if( !m_flStartThrow )
+		{
+			m_flStartThrow = gpGlobals->time;
+			m_flReleaseThrow = 0;
+
+			//Retain current position
+			for (int i = 0; i < 4; ++i)
+			{
+				m_WeaponPositions[i] = (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
+				m_WeaponPositionTimestamps[i] = gpGlobals->time;
+			}
+
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase(); //Kick in weapon idle as soon as trigger is released
+		}
+		else
+		{
+			//Record recent weapon position for trajectory
+			for (int i = 3; i != 0; --i)
+			{
+				m_WeaponPositions[i] = m_WeaponPositions[i-1];
+				m_WeaponPositionTimestamps[i] = m_WeaponPositionTimestamps[i-1];
+			}
+
+			m_WeaponPositions[0] =  (m_pPlayer->GetWeaponPosition() - m_pPlayer->GetClientOrigin());
+			m_WeaponPositionTimestamps[0] =  gpGlobals->time;
+		}
+	}
+}
+
+void CSqueak::PrimaryAttack() {
+	PreThrow();
+}
+
+void CSqueak::Throw(Vector throwVelocity)
 {
 	if( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
 	{
-		UTIL_MakeVectors( m_pPlayer->GetWeaponViewAngles());
-		TraceResult tr;
-		Vector trace_origin = m_pPlayer->GetWeaponPosition();
-
-		// find place to toss monster
-		UTIL_TraceLine( trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr );
-
 		int flags;
 #ifdef CLIENT_WEAPONS
 		flags = FEV_NOTHOST;
@@ -502,55 +532,75 @@ void CSqueak::PrimaryAttack()
 #endif
 		PLAYBACK_EVENT_FULL( flags, m_pPlayer->edict(), m_usSnarkFire, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, 0, 0, 0, 0 );
 
-		if( tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25 )
-		{
-			// player "shoot" animation
-			m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+		// player "shoot" animation
+		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
 #ifndef CLIENT_DLL
-			CBaseEntity *pSqueak = CBaseEntity::Create( "monster_snark", tr.vecEndPos, m_pPlayer->GetWeaponAngles(), m_pPlayer->edict() );
-			pSqueak->pev->velocity = m_pPlayer->GetWeaponVelocity() * 2;
+		Vector vecSrc = m_pPlayer->GetWeaponPosition();
+		CBaseEntity *pSqueak = CBaseEntity::Create( "monster_snark", vecSrc, Vector( 0, 0, 0 ), m_pPlayer->edict() );
+		pSqueak->pev->velocity = throwVelocity;
 #endif
-			// play hunt sound
-			float flRndSound = RANDOM_FLOAT( 0, 1 );
+		// play hunt sound
+		float flRndSound = RANDOM_FLOAT( 0, 1 );
 
-			if( flRndSound <= 0.5 )
-				EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105 );
-			else 
-				EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105 );
+		if( flRndSound <= 0.5 )
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105 );
+		else
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105 );
 
-			m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
-
-			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
-
-			m_fJustThrown = 1;
-
-			m_flNextPrimaryAttack = GetNextAttackDelay( 0.3 );
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.0;
-		}
+		m_pPlayer->m_iWeaponVolume = QUIET_GUN_VOLUME;
 	}
 }
 
 void CSqueak::SecondaryAttack( void )
 {
-
+	PrimaryAttack();
 }
+
+#define VectorDistance(a, b) (sqrt( VectorDistance2( a, b )))
+#define VectorDistance2(a, b) (((a)[0] - (b)[0]) * ((a)[0] - (b)[0]) + ((a)[1] - (b)[1]) * ((a)[1] - (b)[1]) + ((a)[2] - (b)[2]) * ((a)[2] - (b)[2]))
 
 void CSqueak::WeaponIdle( void )
 {
 	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
 
-	if( m_fJustThrown )
-	{
-		m_fJustThrown = 0;
+	if ( m_flStartThrow ) {
+        //Caclulate speed between oldest reading and second to last
+        float distance = VectorDistance(m_WeaponPositions[1], m_WeaponPositions[3]);
+        float t = m_WeaponPositionTimestamps[1] - m_WeaponPositionTimestamps[3];
+        float velocity = distance / t;
 
-		if( !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] )
-		{
-			RetireWeapon();
-			return;
-		}
+        //Calculate trajectory
+        Vector trajectory = m_WeaponPositions[1] - m_WeaponPositions[3];
 
-		SendWeaponAnim( SQUEAK_UP );
+        // Reduce velocity
+        Vector throwVelocity = trajectory * (velocity * (0.7f));
+
+        //Add in player velocity
+        throwVelocity = throwVelocity + m_pPlayer->pev->velocity;
+
+        // throw it!
+        Throw(throwVelocity);
+
+        m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
+
+        m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.25f;
+        m_flNextPrimaryAttack = GetNextAttackDelay( 0.3 );
+
+        m_flStartThrow = 0;
+        m_flReleaseThrow = gpGlobals->time;
+
+        if (!m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()]) {
+            RetireWeapon();
+            return;
+        }
+
+        return;
+    }
+    else if (m_flReleaseThrow)
+    {
+        m_flReleaseThrow = 0;
+		SendWeaponAnim( SQUEAK_UP);
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat( m_pPlayer->random_seed, 10, 15 );
 		return;
 	}
