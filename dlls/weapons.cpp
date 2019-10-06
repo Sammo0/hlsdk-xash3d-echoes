@@ -691,11 +691,12 @@ CBeam* CBasePlayerWeapon::g_pLaser = NULL;
 void CBasePlayerWeapon::KillLaser( void )
 {
 #ifndef CLIENT_DLL
-	if( g_pLaser )
+    //Check the entity hasn't already been destroyed by a level transition
+	if( g_pLaser)
 	{
 		UTIL_Remove( g_pLaser );
-		g_pLaser = NULL;
 	}
+	g_pLaser = NULL;
 #endif
 }
 
@@ -704,8 +705,9 @@ void CBasePlayerWeapon::MakeLaser( void )
 
 #ifndef CLIENT_DLL
 
+
 	if (CVAR_GET_FLOAT("vr_lasersight") == 0.0f) {
-		KillLaser();
+        KillLaser();
 		return;
 	}
 
@@ -723,9 +725,10 @@ void CBasePlayerWeapon::MakeLaser( void )
 
 	// set to follow laser spot
 	Vector vecTmpEnd = vecSrc + vecAiming * 2048 * flBeamLength;
-	if (!g_pLaser) {
+	if (!g_pLaser || !(g_pLaser->pev)) {
 		g_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
 	}
+
 	g_pLaser->PointsInit( vecSrc, vecTmpEnd );
 	g_pLaser->SetColor( 214, 34, 34 );
 	g_pLaser->SetScrollRate( 255 );
