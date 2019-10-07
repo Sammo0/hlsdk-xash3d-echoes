@@ -2804,7 +2804,8 @@ void CBasePlayer::Spawn( void )
 	m_bitsHUDDamage = -1;
 	m_bitsDamageType = 0;
 	m_afPhysicsFlags = 0;
-	m_fLongJump = FALSE;// no longjump module. 
+	m_fLongJump = FALSE;// no longjump module.
+	m_ChangedLevel = true;
 
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "hl", "1" );
@@ -3761,6 +3762,12 @@ Called every frame by the player PreThink
 */
 void CBasePlayer::ItemPreFrame()
 {
+	if (m_ChangedLevel)
+	{
+		m_pActiveItem->LevelChanged();
+		m_ChangedLevel = false;
+	}
+
 #if defined( CLIENT_WEAPONS )
 	if( m_flNextAttack > 0 )
 #else

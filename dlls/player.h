@@ -326,6 +326,8 @@ public:
 
 	bool m_bSentBhopcap; // If false, the player just joined and needs a bhopcap message.
 
+	bool m_ChangedLevel;
+
 	// Methods and members for VR stuff - Max Vollmer, 2017-08-18
 private:
 	Vector vr_weaponOffset;

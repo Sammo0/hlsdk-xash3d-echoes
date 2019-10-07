@@ -254,6 +254,8 @@ public:
 
 	virtual CBasePlayerItem *GetWeaponPtr( void ) { return NULL; };
 
+	virtual void LevelChanged( void ) {};
+
 	static ItemInfo ItemInfoArray[ MAX_WEAPONS ];
 	static AmmoInfo AmmoInfoArray[ MAX_AMMO_SLOTS ];
 
@@ -329,6 +331,8 @@ public:
 
 	virtual void MakeLaser( void );
 	virtual void KillLaser( void );
+
+	virtual void LevelChanged( void );
 
 	int	PrimaryAmmoIndex(); 
 	int	SecondaryAmmoIndex(); 

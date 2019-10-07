@@ -335,6 +335,17 @@ void CBasePlayerWeapon::KillLaser( void )
 #endif
 }
 
+void CBasePlayerWeapon::LevelChanged( void )
+{
+	//On level change the laser entity would have been destroyed
+	//so simply create a new one
+#ifndef CLIENT_DLL
+	g_pLaser = NULL;
+	MakeLaser( );
+#endif
+}
+
+
 void CBasePlayerWeapon::MakeLaser( void )
 {
 #ifndef CLIENT_DLL
