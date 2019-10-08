@@ -143,6 +143,17 @@ void HUD_PlaybackEvent( int flags, const edict_t *pInvoker, unsigned short event
 
 /*
 =====================
+HUD_CVarGetFloat
+
+get float cvar client
+=====================
+*/
+float HUD_CVarGetFloat( const char* szVarName )
+{
+	return gEngfuncs.pfnGetCvarFloat( szVarName );
+}
+/*
+=====================
 HUD_SetMaxSpeed
 
 =====================

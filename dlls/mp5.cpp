@@ -150,6 +150,15 @@ void CMP5::PrimaryAttack()
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	Vector vecAiming = m_pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
 	Vector vecDir;
+
+	//If stabiliased, reduce the spread
+	float stabilised = CVAR_GET_FLOAT("vr_weapon_stabilised");
+	float spread = 1.0f;
+	if (stabilised != 0.0f)
+	{
+		spread = 0.45f;
+	}
+
 #ifdef CLIENT_DLL
 	if( !bIsMultiplayer() )
 #else
@@ -157,12 +166,12 @@ void CMP5::PrimaryAttack()
 #endif
 	{
 		// optimized multiplayer. Widened to make it easier to hit a moving player
-		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_6DEGREES, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_6DEGREES * spread, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 	}
 	else
 	{
 		// single player spread
-		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_3DEGREES, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
+		vecDir = m_pPlayer->FireBulletsPlayer( 1, vecSrc, vecAiming, VECTOR_CONE_3DEGREES * spread, 8192, BULLET_PLAYER_MP5, 2, 0, m_pPlayer->pev, m_pPlayer->random_seed );
 	}
 
 	int flags;
