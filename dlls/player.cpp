@@ -3762,12 +3762,6 @@ Called every frame by the player PreThink
 */
 void CBasePlayer::ItemPreFrame()
 {
-	if (m_ChangedLevel)
-	{
-		m_pActiveItem->LevelChanged();
-		m_ChangedLevel = false;
-	}
-
 #if defined( CLIENT_WEAPONS )
 	if( m_flNextAttack > 0 )
 #else
@@ -3780,7 +3774,13 @@ void CBasePlayer::ItemPreFrame()
 	if( !m_pActiveItem )
 		return;
 
-	m_pActiveItem->ItemPreFrame();
+    if (m_ChangedLevel)
+    {
+        m_pActiveItem->LevelChanged();
+        m_ChangedLevel = false;
+    }
+
+    m_pActiveItem->ItemPreFrame();
 }
 
 /*
