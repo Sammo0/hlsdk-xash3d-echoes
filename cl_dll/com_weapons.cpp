@@ -152,6 +152,18 @@ float HUD_CVarGetFloat( const char* szVarName )
 {
 	return gEngfuncs.pfnGetCvarFloat( szVarName );
 }
+
+
+/*
+=====================
+HUD_ServerCommand
+=====================
+*/
+void HUD_ServerCommand( const char* szVarName )
+{
+	gEngfuncs.pfnServerCmd( szVarName );
+}
+
 /*
 =====================
 HUD_SetMaxSpeed

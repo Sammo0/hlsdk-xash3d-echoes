@@ -176,6 +176,9 @@ int CHudGeiger::Draw( float flTime )
 
 			sprintf( sz, "player/geiger%d.wav", j + 1 );
 			PlaySound( sz, flvol );
+
+			if (gMobileEngfuncs)
+				gMobileEngfuncs->pfnVibrate(50, CVAR_GET_FLOAT("hand"), (pct / 100.0f));
 		}
 	}
 

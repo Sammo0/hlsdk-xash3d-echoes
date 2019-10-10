@@ -667,6 +667,7 @@ void HUD_InitClientWeapons( void )
 	g_engfuncs.pfnRandomFloat = gEngfuncs.pfnRandomFloat;
 	g_engfuncs.pfnRandomLong = gEngfuncs.pfnRandomLong;
 	g_engfuncs.pfnCVarGetFloat = HUD_CVarGetFloat;
+	g_engfuncs.pfnServerCommand = HUD_ServerCommand;
 
 	// Allocate a slot for the local player
 	HUD_PrepEntity( &player, NULL );

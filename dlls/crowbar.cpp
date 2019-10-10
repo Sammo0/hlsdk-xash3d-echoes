@@ -253,6 +253,9 @@ void CCrowbar::CheckSmack(float speed)
 				}
 			}
 
+			//vibrate a bit
+			SERVER_COMMAND("vibrate 90.0 1 1.0\n");
+
 			m_pPlayer->m_iWeaponVolume = flVol * CROWBAR_WALLHIT_VOLUME;
 			DecalGunshot(&tr, BULLET_PLAYER_CROWBAR);
 		}

@@ -135,14 +135,25 @@ int CHudHealth::MsgFunc_Damage( const char *pszName, int iSize, void *pbuf )
 	{
 		CalcDamageDirection( vecFrom );
 
-                if( gMobileEngfuncs && damageTaken > 0 )
-                {
-			float time = damageTaken * 4.0f;
+		if( gMobileEngfuncs && damageTaken > 0 )
+		{
+			float time = damageTaken * 8.0f;
 
-			if( time > 200.0f )
-				time = 200.0f;
-			gMobileEngfuncs->pfnVibrate( time, 0 );
-                }
+			if( time > 500.0f )
+				time = 500.0f;
+
+			float both = sqrtf(powf(m_fAttackFront, 2) + powf(m_fAttackRear, 2));
+			float left = sqrtf(powf(both, 2) + powf(m_fAttackLeft, 2));
+			float right = sqrtf(powf(both, 2) + powf(m_fAttackRight, 2));
+
+			if (left > 0.0f) {
+				gMobileEngfuncs->pfnVibrate(time, 0, left);
+			}
+
+			if (right > 0.0f) {
+				gMobileEngfuncs->pfnVibrate(time, 1, right);
+			}
+        }
 	}
 
 	return 1;

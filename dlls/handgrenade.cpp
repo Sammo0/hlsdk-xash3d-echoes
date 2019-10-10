@@ -131,6 +131,11 @@ void CHandGrenade::PrimaryAttack()
 
 			SendWeaponAnim( HANDGRENADE_PINPULL );
 			m_flTimeWeaponIdle = UTIL_WeaponTimeBase(); //Kick in weapon idle as soon as trigger is released
+
+			//vibrate a bit
+			char buffer[256];
+			sprintf(buffer, "vibrate 80.0 %i 0.4\n", 1-(int)CVAR_GET_FLOAT("hand"));
+			SERVER_COMMAND(buffer);
 		}
 		else
 		{

@@ -387,6 +387,8 @@ void EV_HLDM_FireBullets( int idx, float *forward, float *right, float *up, int 
 		vec3_t vecDir, vecEnd;
 		float x, y, z;
 
+		float stabilised = gEngfuncs.pfnGetCvarFloat("vr_weapon_stabilised");
+
 		//We randomize for the Shotgun.
 		if( iBulletType == BULLET_PLAYER_BUCKSHOT )
 		{
@@ -405,7 +407,6 @@ void EV_HLDM_FireBullets( int idx, float *forward, float *right, float *up, int 
 		else
 		{
 			//If stabiliased, reduce the spread
-			float stabilised = gEngfuncs.pfnGetCvarFloat("vr_weapon_stabilised");
 			float spreadX = flSpreadX;
 			float spreadY = flSpreadY;
 			if (stabilised != 0.0f)
@@ -433,6 +434,31 @@ void EV_HLDM_FireBullets( int idx, float *forward, float *right, float *up, int 
 		gEngfuncs.pEventAPI->EV_PlayerTrace( vecSrc, vecEnd, PM_STUDIO_BOX, -1, &tr );
 
 		tracer = EV_HLDM_CheckTracer( idx, vecSrc, tr.endpos, forward, right, iBulletType, iTracerFreq, tracerCount );
+
+        // haptics
+        if (gMobileEngfuncs) {
+            int leftHanded = (int) CVAR_GET_FLOAT("hand");
+            switch (iBulletType) {
+                default:
+                case BULLET_PLAYER_9MM:
+                    gMobileEngfuncs->pfnVibrate(120, 1 - leftHanded, 0.4);
+                    break;
+                case BULLET_PLAYER_MP5:
+                    gMobileEngfuncs->pfnVibrate(60, 1 - leftHanded, 0.75);
+                    if (stabilised != 0.0f)
+                        gMobileEngfuncs->pfnVibrate(60, leftHanded, 0.5);
+                    break;
+                case BULLET_PLAYER_BUCKSHOT:
+                    gMobileEngfuncs->pfnVibrate(120, 1 - leftHanded, 0.9);
+                    if (stabilised != 0.0f)
+                        gMobileEngfuncs->pfnVibrate(120, leftHanded, 0.75);
+                    break;
+                case BULLET_PLAYER_357:
+                    gMobileEngfuncs->pfnVibrate(120, 1 - leftHanded, 0.8);
+                    break;
+            }
+        }
+
 
 		// do damage, paint decals
 		if( tr.fraction != 1.0 )
@@ -792,6 +818,10 @@ void EV_FireMP52( event_args_t *args )
 		gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/glauncher2.wav", 1, ATTN_NORM, 0, 94 + gEngfuncs.pfnRandomLong( 0, 0xf ) );
 		break;
 	}
+
+	if (gMobileEngfuncs) {
+		gMobileEngfuncs->pfnVibrate(100, 1-(int)CVAR_GET_FLOAT("hand"), 0.6);
+	}
 }
 //======================
 //		 MP5 END
@@ -964,6 +994,10 @@ void EV_FireGauss( event_args_t *args )
 	}
 
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/gauss2.wav", 0.5 + flDamage * ( 1.0 / 400.0 ), ATTN_NORM, 0, 85 + gEngfuncs.pfnRandomLong( 0, 0x1f ) );
+
+	if (gMobileEngfuncs) {
+		gMobileEngfuncs->pfnVibrate(120, 1-(int)CVAR_GET_FLOAT("hand"), 0.5);
+	}
 
 	while( flDamage > 10 && nMaxHits > 0 )
 	{
@@ -1324,6 +1358,10 @@ void EV_FireCrossbow2( event_args_t *args )
 	gEngfuncs.pEventAPI->EV_SetTraceHull( 2 );
 	gEngfuncs.pEventAPI->EV_PlayerTrace( vecSrc, vecEnd, PM_STUDIO_BOX, -1, &tr );
 
+	if (gMobileEngfuncs) {
+		gMobileEngfuncs->pfnVibrate(50, 1-(int)CVAR_GET_FLOAT("hand"), 0.6);
+	}
+
 	//We hit something
 	if( tr.fraction < 1.0 )
 	{
@@ -1387,6 +1425,10 @@ void EV_FireCrossbow( event_args_t *args )
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/xbow_fire1.wav", 1, ATTN_NORM, 0, 93 + gEngfuncs.pfnRandomLong( 0, 0xF ) );
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_ITEM, "weapons/xbow_reload1.wav", gEngfuncs.pfnRandomFloat( 0.95, 1.0 ), ATTN_NORM, 0, 93 + gEngfuncs.pfnRandomLong( 0, 0xF ) );
 
+	if (gMobileEngfuncs) {
+		gMobileEngfuncs->pfnVibrate(50, 1-(int)CVAR_GET_FLOAT("hand"), 0.4);
+	}
+
 	//Only play the weapon anims if I shot it. 
 	if( EV_IsLocal( idx ) )
 	{
@@ -1433,6 +1475,14 @@ void EV_FireRpg( event_args_t *args )
 
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, "weapons/rocketfire1.wav", 0.9, ATTN_NORM, 0, PITCH_NORM );
 	gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_ITEM, "weapons/glauncher.wav", 0.7, ATTN_NORM, 0, PITCH_NORM );
+
+	if (gMobileEngfuncs) {
+        int leftHanded = (int) CVAR_GET_FLOAT("hand");
+        int stabilised = (int) CVAR_GET_FLOAT("vr_weapon_stabilised");
+		gMobileEngfuncs->pfnVibrate(200, 1-leftHanded, 0.9);
+		if (stabilised)
+            gMobileEngfuncs->pfnVibrate(200, leftHanded, 0.8);
+	}
 
 	//Only play the weapon anims if I shot it. 
 	if( EV_IsLocal( idx ) )
@@ -1524,6 +1574,11 @@ void EV_EgonFire( event_args_t *args )
 			gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, EGON_SOUND_STARTUP, 0.98, ATTN_NORM, 0, 125 );
 		else
 			gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, EGON_SOUND_STARTUP, 0.9, ATTN_NORM, 0, 100 );
+
+		if (gMobileEngfuncs) {
+			//Vibrate until we say stop
+			gMobileEngfuncs->pfnVibrate(-1, 1-(int)CVAR_GET_FLOAT("hand"), 0.5);
+		}
 	}
 	else
 	{
@@ -1621,6 +1676,11 @@ void EV_EgonStop( event_args_t *args )
 	if( args->iparam1 )
 		 gEngfuncs.pEventAPI->EV_PlaySound( idx, origin, CHAN_WEAPON, EGON_SOUND_OFF, 0.98, ATTN_NORM, 0, 100 );
 
+	if (gMobileEngfuncs) {
+		//we say stop
+		gMobileEngfuncs->pfnVibrate(0.0f, 1-(int)CVAR_GET_FLOAT("hand"), 0.0f);
+	}
+
 	if( EV_IsLocal( idx ) )
 	{
 		if( pBeam )
@@ -1693,6 +1753,10 @@ void EV_HornetGunFire( event_args_t *args )
 		V_PunchAxis( 0, gEngfuncs.pfnRandomLong( 0, 2 ) );
 		gEngfuncs.pEventAPI->EV_WeaponAnimation( HGUN_SHOOT, 1 );
 	}
+
+    if (gMobileEngfuncs) {
+        gMobileEngfuncs->pfnVibrate(100, 1-(int)CVAR_GET_FLOAT("hand"), 0.5);
+    }
 
 	switch( gEngfuncs.pfnRandomLong( 0, 2 ) )
 	{
