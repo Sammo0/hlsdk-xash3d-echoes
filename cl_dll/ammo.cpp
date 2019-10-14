@@ -881,7 +881,7 @@ int CHudAmmo::Draw( float flTime )
 		if( pw->iClip >= 0 )
 		{
 			// room for the number and the '|' and the current ammo
-			x = (int)((ScreenWidth * 0.7f) - ( 8 * AmmoWidth ) - iIconWidth + GetStereoDepthOffset());
+			x = (int)((ScreenWidth * 0.67f) - ( 8 * AmmoWidth ) - iIconWidth + GetStereoDepthOffset());
 			x = gHUD.DrawHudNumber( x, y, iFlags | DHN_3DIGITS, pw->iClip, r, g, b );
 
 			/*wrect_t rc;
@@ -908,7 +908,7 @@ int CHudAmmo::Draw( float flTime )
 		else
 		{
 			// SPR_Draw a bullets only line
-			x = (int)((ScreenWidth * 0.7f) - 4 * AmmoWidth - iIconWidth + GetStereoDepthOffset());
+			x = (int)((ScreenWidth * 0.67f) - 4 * AmmoWidth - iIconWidth + GetStereoDepthOffset());
 			x = gHUD.DrawHudNumber( x, y, iFlags | DHN_3DIGITS, gWR.CountAmmo( pw->iAmmoType ), r, g, b );
 		}
 
@@ -927,7 +927,7 @@ int CHudAmmo::Draw( float flTime )
 		if( ( pw->iAmmo2Type != 0 ) && ( gWR.CountAmmo( pw->iAmmo2Type ) > 0 ) )
 		{
 			y -= gHUD.m_iFontHeight + gHUD.m_iFontHeight / 4;
-			x = (int)((ScreenWidth * 0.7f) - 4 * AmmoWidth - iIconWidth + GetStereoDepthOffset());
+			x = (int)((ScreenWidth * 0.67f) - 4 * AmmoWidth - iIconWidth + GetStereoDepthOffset());
 			x = gHUD.DrawHudNumber( x, y, iFlags | DHN_3DIGITS, gWR.CountAmmo( pw->iAmmo2Type ), r, g, b );
 
 			// Draw the ammo Icon

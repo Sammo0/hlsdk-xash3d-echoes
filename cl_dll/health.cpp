@@ -229,12 +229,12 @@ int CHudHealth::Draw( float flTime )
 		int CrossWidth = gHUD.GetSpriteRect( m_HUD_cross ).right - gHUD.GetSpriteRect( m_HUD_cross ).left;
 
 		y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2 - (ScreenHeight / 4.0f);
-		x = (int)((ScreenWidth / 3) + CrossWidth / 2  +  GetStereoDepthOffset() );
+		x = (int)((ScreenWidth / 2.8) + CrossWidth / 2  +  GetStereoDepthOffset() );
 
 		SPR_Set( gHUD.GetSprite( m_HUD_cross ), r, g, b );
 		SPR_DrawAdditive( 0, x, y, &gHUD.GetSpriteRect( m_HUD_cross ) );
 
-		x = (int)((ScreenWidth / 3) +CrossWidth + HealthWidth / 2 + GetStereoDepthOffset() );
+		x = (int)((ScreenWidth / 2.8) + CrossWidth + HealthWidth / 2 + GetStereoDepthOffset() );
 
 		x = gHUD.DrawHudNumber( x, y, DHN_3DIGITS | DHN_DRAWZERO, m_iHealth, r, g, b );
 
