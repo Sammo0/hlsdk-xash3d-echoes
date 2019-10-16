@@ -254,7 +254,9 @@ void CCrowbar::CheckSmack(float speed)
 			}
 
 			//vibrate a bit
-			SERVER_COMMAND("vibrate 90.0 1 1.0\n");
+			char buffer[256];
+			sprintf(buffer, "vibrate 90.0 %i 1.0\n", 1-(int)CVAR_GET_FLOAT("hand"));
+			SERVER_COMMAND(buffer);
 
 			m_pPlayer->m_iWeaponVolume = flVol * CROWBAR_WALLHIT_VOLUME;
 			DecalGunshot(&tr, BULLET_PLAYER_CROWBAR);
