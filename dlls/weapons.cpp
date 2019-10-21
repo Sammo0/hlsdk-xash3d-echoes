@@ -421,7 +421,21 @@ TYPEDESCRIPTION	CBasePlayerWeapon::m_SaveData[] =
 	//DEFINE_FIELD( CBasePlayerWeapon, m_iClientWeaponState, FIELD_INTEGER ), reset to zero on load so hud gets updated correctly
 };
 
-IMPLEMENT_SAVERESTORE( CBasePlayerWeapon, CBasePlayerItem )
+int CBasePlayerWeapon::Save(CSave& save)
+{
+	KillLaser(); // destory laser on save because it is only temp and will be recreated after save anyways -> no more multi laser bug after saving
+
+	if (!CBasePlayerItem::Save(save))
+		return 0;
+	return save.WriteFields("CBasePlayerWeapon", this, m_SaveData, ARRAYSIZE(m_SaveData));
+}
+
+int CBasePlayerWeapon::Restore(CRestore& restore)
+{
+	if (!CBasePlayerItem::Restore(restore))
+		return 0;
+	return restore.ReadFields("CBasePlayerWeapon", this, m_SaveData, ARRAYSIZE(m_SaveData));
+}
 
 void CBasePlayerItem::SetObjectCollisionBox( void )
 {
