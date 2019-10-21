@@ -126,7 +126,9 @@ public:
 	void _cdecl UserCmd_Close( void );
 	void _cdecl UserCmd_NextWeapon( void );
 	void _cdecl UserCmd_PrevWeapon( void );
-
+	void _cdecl UserCmd_NextWeaponSlot(void);
+	void _cdecl UserCmd_PrevWeaponSlot(void);
+	
 private:
 	float m_fFade;
 	RGBA  m_rgba;
