@@ -1027,9 +1027,8 @@ void EV_FireGauss( event_args_t *args )
 				EV_MuzzleFlash();
 			}
 			fFirstBeam = 0;
-
-			gEngfuncs.pEfxAPI->R_BeamEntPoint( 
-				idx | 0x1000,
+			// was R_BeamEntPoint(idx | 0x1000, but did somehow not work; m_fPrimaryFire seems also be wrong because we get the wrong color for the beam -> needs further investigation
+			gEngfuncs.pEfxAPI->R_BeamPoints(vecSrc,
 				tr.endpos,
 				m_iBeam,
 				0.1,
