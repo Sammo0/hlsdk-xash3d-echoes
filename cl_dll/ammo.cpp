@@ -247,6 +247,8 @@ DECLARE_COMMAND( m_Ammo, Slot10 )
 DECLARE_COMMAND( m_Ammo, Close )
 DECLARE_COMMAND( m_Ammo, NextWeapon )
 DECLARE_COMMAND( m_Ammo, PrevWeapon )
+DECLARE_COMMAND(m_Ammo, NextWeaponSlot )
+DECLARE_COMMAND(m_Ammo, PrevWeaponSlot )
 
 // width of ammo fonts
 #define AMMO_SMALL_WIDTH 10
@@ -279,6 +281,8 @@ int CHudAmmo::Init( void )
 	HOOK_COMMAND( "cancelselect", Close );
 	HOOK_COMMAND( "invnext", NextWeapon );
 	HOOK_COMMAND( "invprev", PrevWeapon );
+	HOOK_COMMAND("invnextslot", NextWeaponSlot );
+	HOOK_COMMAND("invprevslot", PrevWeaponSlot );
 
 	Reset();
 
@@ -824,6 +828,88 @@ void CHudAmmo::UserCmd_PrevWeapon( void )
 
 	gpActiveSel = NULL;
 }
+
+// Selects the next item in the weapon menu
+void CHudAmmo::UserCmd_NextWeaponSlot(void)
+{
+	if (gHUD.m_fPlayerDead || (gHUD.m_iHideHUDDisplay & (HIDEHUD_WEAPONS | HIDEHUD_ALL)))
+		return;
+
+	if (!gpActiveSel || gpActiveSel == (WEAPON*)1)
+		gpActiveSel = m_pWeapon;
+
+	int pos = 0;
+	int slot = 0;
+	if (gpActiveSel)
+	{
+		//pos = gpActiveSel->iSlotPos + 1;
+		slot = gpActiveSel->iSlot + 1;
+	}
+
+	for (int loop = 0; loop <= 1; loop++)
+	{
+		for (; slot < MAX_WEAPON_SLOTS; slot++)
+		{
+			for (; pos < MAX_WEAPON_POSITIONS; pos++)
+			{
+				WEAPON* wsp = gWR.GetWeaponSlot(slot, pos);
+
+				if (wsp && gWR.HasAmmo(wsp))
+				{
+					gpActiveSel = wsp;
+					return;
+				}
+			}
+
+			pos = 0;
+		}
+
+		slot = 0;  // start looking from the first slot again
+	}
+
+	gpActiveSel = NULL;
+}
+
+void CHudAmmo::UserCmd_PrevWeaponSlot(void)
+{
+	if (gHUD.m_fPlayerDead || (gHUD.m_iHideHUDDisplay & (HIDEHUD_WEAPONS | HIDEHUD_ALL)))
+		return;
+
+	if (!gpActiveSel || gpActiveSel == (WEAPON*)1)
+		gpActiveSel = m_pWeapon;
+
+	int pos = 0;// MAX_WEAPON_POSITIONS - 1;
+	int slot = MAX_WEAPON_SLOTS - 1;
+	if (gpActiveSel)
+	{
+		//pos = gpActiveSel->iSlotPos - 1;
+		slot = gpActiveSel->iSlot-1;
+	}
+
+	for (int loop = 0; loop <= 1; loop++)
+	{
+		for (; slot >= 0; slot--)
+		{
+			for (; pos >= 0; pos--)
+			{
+				WEAPON* wsp = gWR.GetWeaponSlot(slot, pos);
+
+				if (wsp && gWR.HasAmmo(wsp))
+				{
+					gpActiveSel = wsp;
+					return;
+				}
+			}
+
+			pos = MAX_WEAPON_POSITIONS - 1;
+		}
+
+		slot = MAX_WEAPON_SLOTS - 1;
+	}
+
+	gpActiveSel = NULL;
+}
+
 
 //-------------------------------------------------------------------------
 // Drawing code
