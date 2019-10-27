@@ -333,7 +333,6 @@ private:
 	Vector vr_weaponOffset;
 	Vector vr_weaponAngles;
 	Vector vr_weaponVelocity;
-	Vector vr_lastHMDOffset;
 	Vector2D vr_ClientOriginOffset;
 
 public:

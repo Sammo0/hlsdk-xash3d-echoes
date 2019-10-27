@@ -50,7 +50,7 @@ playermove_t *pmove = NULL;
 #define VEC_DUCK_HULL_MAX	18
 #define VEC_DUCK_VIEW		10
 #define PM_DEAD_VIEWHEIGHT	-8
-#define MAX_CLIMB_SPEED		200
+#define MAX_CLIMB_SPEED		120
 #define STUCK_MOVEUP		1
 #define STUCK_MOVEDOWN		-1
 #define VEC_HULL_MIN		-36
@@ -2149,7 +2149,7 @@ void PM_LadderMove( physent_t *pLadder )
 		if( flSpeed > pmove->maxspeed )
 			flSpeed = pmove->maxspeed;
 
-		AngleVectors( pmove->angles, vpn, v_right, NULL );
+		AngleVectors( pmove->angles2, vpn, v_right, NULL );
 
 		if( pmove->flags & FL_DUCKING )
 			flSpeed *= PLAYER_DUCKING_MULTIPLIER;
@@ -2158,9 +2158,9 @@ void PM_LadderMove( physent_t *pLadder )
 		if( pmove->cmd.buttons & IN_FORWARD )
 			forward += flSpeed;
 		if( pmove->cmd.buttons & IN_MOVELEFT )
-			right -= flSpeed;
+			right -= (flSpeed / 3.0f);
 		if( pmove->cmd.buttons & IN_MOVERIGHT )
-			right += flSpeed;
+			right += (flSpeed / 3.0f);
 
 		if( pmove->cmd.buttons & IN_JUMP )
 		{
