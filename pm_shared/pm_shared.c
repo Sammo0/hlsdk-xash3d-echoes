@@ -50,7 +50,7 @@ playermove_t *pmove = NULL;
 #define VEC_DUCK_HULL_MAX	18
 #define VEC_DUCK_VIEW		10
 #define PM_DEAD_VIEWHEIGHT	-8
-#define MAX_CLIMB_SPEED		120
+#define DEFAULT_CLIMB_SPEED		120
 #define STUCK_MOVEUP		1
 #define STUCK_MOVEDOWN		-1
 #define VEC_HULL_MIN		-36
@@ -92,6 +92,7 @@ playermove_t *pmove = NULL;
 #define PLAYER_LONGJUMP_SPEED		350 // how fast we longjump
 
 #define PLAYER_DUCKING_MULTIPLIER	0.333
+#define PLAYER_RUNNING_MULTIPLIER	3.0
 
 // double to float warning
 #ifdef _MSC_VER
@@ -2143,7 +2144,15 @@ void PM_LadderMove( physent_t *pLadder )
 	{
 		float forward = 0, right = 0;
 		vec3_t vpn, v_right;
-		float flSpeed = MAX_CLIMB_SPEED;
+		float flSpeed = DEFAULT_CLIMB_SPEED;
+
+		if( pmove->flags & FL_DUCKING ) {
+            //Because overrall speed affects ability to start climbing a ladder only reduce the speed when ducked and actually off the floor
+		    if (!onFloor)
+                flSpeed *= PLAYER_DUCKING_MULTIPLIER;
+        }
+		else if( pmove->cmd.buttons & IN_RUN ) // for ladders, don't allow duck and run at the same time
+			flSpeed *= PLAYER_RUNNING_MULTIPLIER;
 
 		// they shouldn't be able to move faster than their maxspeed
 		if( flSpeed > pmove->maxspeed )
@@ -2151,8 +2160,6 @@ void PM_LadderMove( physent_t *pLadder )
 
 		AngleVectors( pmove->angles2, vpn, v_right, NULL );
 
-		if( pmove->flags & FL_DUCKING )
-			flSpeed *= PLAYER_DUCKING_MULTIPLIER;
 		if( pmove->cmd.buttons & IN_BACK )
 			forward -= flSpeed;
 		if( pmove->cmd.buttons & IN_FORWARD )
@@ -2206,7 +2213,7 @@ void PM_LadderMove( physent_t *pLadder )
 				VectorMA( lateral, -normal, tmp, pmove->velocity );
 				if( onFloor && normal > 0 )	// On ground moving away from the ladder
 				{
-					VectorMA( pmove->velocity, MAX_CLIMB_SPEED, trace.plane.normal, pmove->velocity );
+					VectorMA( pmove->velocity, DEFAULT_CLIMB_SPEED, trace.plane.normal, pmove->velocity );
 				}
 				//pev->velocity = lateral - ( CrossProduct( trace.vecPlaneNormal, perp ) * normal );
 			}
