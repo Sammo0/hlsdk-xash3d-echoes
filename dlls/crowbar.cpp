@@ -152,6 +152,7 @@ void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, f
 
 void CCrowbar::ItemPostFrame()
 {
+	MakeLaser();
 #ifndef CLIENT_DLL
 	Vector weaponVelocity = m_pPlayer->GetWeaponVelocity();
 	float speed = weaponVelocity.Length();

@@ -523,6 +523,8 @@ public:
 	int m_iSwing;
 	TraceResult m_trHit;
 
+	void MakeLaser() { KillLaser(); }
+
 	virtual BOOL UseDecrement( void )
 	{ 
 #if defined( CLIENT_WEAPONS )
@@ -924,8 +926,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 
-	void KillLaser( ) {}
-	void MakeLaser( ) {}
+	void MakeLaser() { KillLaser(); }
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -961,8 +962,7 @@ public:
 	BOOL Deploy( void );
 	BOOL IsUseable( void );
 
-	void KillLaser( ) {}
-	void MakeLaser( ) {}
+	void MakeLaser() { KillLaser(); }
 
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
@@ -1002,8 +1002,7 @@ public:
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
 
-	void KillLaser( ) {}
-	void MakeLaser( ) {}
+	void MakeLaser() { KillLaser(); }
 
 	virtual BOOL UseDecrement( void )
 	{ 
@@ -1031,6 +1030,8 @@ public:
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
+
+	void MakeLaser() { KillLaser(); }
 
     void PreThrow();
     void Throw(Vector throwVelocity);
