@@ -101,53 +101,6 @@ void CCrowbar::Holster( int skiplocal /* = 0 */ )
 	SendWeaponAnim( CROWBAR_HOLSTER );
 }
 
-
-void FindHullIntersection( const Vector &vecSrc, TraceResult &tr, float *mins, float *maxs, edict_t *pIgnoreEntity )
-{
-	int			i, j, k;
-	float		distance;
-	float		*minmaxs[2] = {mins, maxs};
-	TraceResult tmpTrace;
-	Vector		vecHullEnd = tr.vecEndPos;
-	Vector		vecEnd;
-
-	distance = 1e6f;
-
-	vecHullEnd = vecSrc + ((vecHullEnd - vecSrc)*2);
-	UTIL_TraceLine( vecSrc, vecHullEnd, dont_ignore_monsters, pIgnoreEntity, &tmpTrace );
-	if ( tmpTrace.flFraction < 1.0 )
-	{
-		tr = tmpTrace;
-		return;
-	}
-
-	for ( i = 0; i < 2; i++ )
-	{
-		for ( j = 0; j < 2; j++ )
-		{
-			for ( k = 0; k < 2; k++ )
-			{
-				vecEnd.x = vecHullEnd.x + minmaxs[i][0];
-				vecEnd.y = vecHullEnd.y + minmaxs[j][1];
-				vecEnd.z = vecHullEnd.z + minmaxs[k][2];
-
-				UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, pIgnoreEntity, &tmpTrace );
-				if ( tmpTrace.flFraction < 1.0 )
-				{
-					float thisDistance = (tmpTrace.vecEndPos - vecSrc).Length();
-					if ( thisDistance < distance )
-					{
-						tr = tmpTrace;
-						distance = thisDistance;
-					}
-				}
-			}
-		}
-	}
-}
-
-
-
 #define CROWBAR_MIN_SWING_SPEED 80
 
 void CCrowbar::ItemPostFrame()
@@ -185,7 +138,7 @@ void CCrowbar::CheckSmack(float speed)
 {
 	UTIL_MakeVectors (m_pPlayer->GetWeaponViewAngles());
 	Vector vecSrc	= m_pPlayer->GetGunPosition();
-	Vector vecEnd	= vecSrc + gpGlobals->v_forward * 32;
+	Vector vecEnd	= vecSrc + gpGlobals->v_up * 16;
 
 	TraceResult tr;
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
