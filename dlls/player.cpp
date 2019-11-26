@@ -1454,7 +1454,7 @@ void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 //
 // PlayerUse - handles USE keypress
 //
-#define	PLAYER_SEARCH_RADIUS	(float)64
+#define	PLAYER_HAND_SEARCH_RADIUS	(float)24
 
 void CBasePlayer::PlayerUse( void )
 {
@@ -1505,16 +1505,18 @@ void CBasePlayer::PlayerUse( void )
 	float flMaxDot = VIEW_FIELD_NARROW;
 	float flDot;
 
-	UTIL_MakeVectors( pev->v_angle );// so we know which way we are facing
+    //Use the item in the vicinity of the player's hand that the hand is pointed towards
+    Vector weaponOrigin = GetWeaponPosition();
+	UTIL_MakeVectors(GetWeaponViewAngles());
 
-	while( ( pObject = UTIL_FindEntityInSphere( pObject, pev->origin, PLAYER_SEARCH_RADIUS ) ) != NULL )
+	while( ( pObject = UTIL_FindEntityInSphere( pObject, weaponOrigin, PLAYER_HAND_SEARCH_RADIUS ) ) != NULL )
 	{
 		if( pObject->ObjectCaps() & ( FCAP_IMPULSE_USE | FCAP_CONTINUOUS_USE | FCAP_ONOFF_USE ) )
 		{
 			// !!!PERFORMANCE- should this check be done on a per case basis AFTER we've determined that
 			// this object is actually usable? This dot is being done for every object within PLAYER_SEARCH_RADIUS
 			// when player hits the use key. How many objects can be in that area, anyway? (sjb)
-			vecLOS = ( VecBModelOrigin( pObject->pev ) - ( pev->origin + pev->view_ofs ) );
+			vecLOS = ( VecBModelOrigin( pObject->pev ) - ( weaponOrigin + pev->view_ofs ) );
 
 			// This essentially moves the origin of the target to the corner nearest the player to test to see 
 			// if it's "hull" is in the view cone
@@ -1533,10 +1535,17 @@ void CBasePlayer::PlayerUse( void )
 	}
 	pObject = pClosest;
 
+	//Check player hasn't put their hand through a wall to use this
+    TraceResult tr;
+    Vector vecSrc = weaponOrigin;
+    Vector vecEnd = EyePosition();
+    UTIL_TraceLine( vecSrc, vecEnd, ignore_monsters, edict(), &tr );
+
 	// Found an object
-	if( pObject )
+	if( pObject &&
+       //Check player can actually reach this object (nothing in the way)
+	   !tr.fStartSolid && tr.flFraction == 1.0f)
 	{
-		//!!!UNDONE: traceline here to prevent USEing buttons through walls			
 		int caps = pObject->ObjectCaps();
 
 		if( m_afButtonPressed & IN_USE )
