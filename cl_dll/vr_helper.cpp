@@ -80,9 +80,6 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 	if (viewent != nullptr)
 	{
-		cvar_s	*vr_worldscale = gEngfuncs.pfnGetCvarPointer( "vr_worldscale" );
-		cvar_s	*vr_weapon_pitchadjust = gEngfuncs.pfnGetCvarPointer( "vr_weapon_pitchadjust" );
-
 		//(left/right, forward/backward, up/down)
 		cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
 		Vector clientPosition = pparams->vieworg;

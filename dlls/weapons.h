@@ -523,7 +523,7 @@ public:
 	int m_iSwing;
 	TraceResult m_trHit;
 
-	void MakeLaser() { KillLaser(); }
+	void MakeLaser();
 
 	virtual BOOL UseDecrement( void )
 	{ 

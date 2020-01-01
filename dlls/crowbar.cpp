@@ -101,7 +101,8 @@ void CCrowbar::Holster( int skiplocal /* = 0 */ )
 	SendWeaponAnim( CROWBAR_HOLSTER );
 }
 
-#define CROWBAR_MIN_SWING_SPEED 80
+#define CROWBAR_MIN_SWING_SPEED 70
+#define CROWBAR_LENGTH 24
 
 void CCrowbar::ItemPostFrame()
 {
@@ -132,13 +133,52 @@ void CCrowbar::ItemPostFrame()
 #endif
 }
 
+//Uncomment to debug the crowbar
+//#define SHOW_CROWBAR_DAMAGE_LINE
+
+void CCrowbar::MakeLaser( void )
+{
+
+#ifndef CLIENT_DLL
+
+	//This is for debugging the crowbar
+#ifdef SHOW_CROWBAR_DAMAGE_LINE
+	TraceResult tr;
+
+	// ALERT( at_console, "serverflags %f\n", gpGlobals->serverflags );
+
+	UTIL_MakeVectors (m_pPlayer->GetWeaponViewAngles());
+	Vector vecSrc	= m_pPlayer->GetGunPosition();
+	Vector vecEnd	= vecSrc + gpGlobals->v_up * CROWBAR_LENGTH;
+	UTIL_TraceLine( vecSrc, vecEnd, dont_ignore_monsters, ENT( pev ), &tr );
+
+	float flBeamLength = tr.flFraction;
+
+	if (!g_pLaser || !(g_pLaser->pev)) {
+		g_pLaser = CBeam::BeamCreate(g_pModelNameLaser, 3);
+	}
+
+	g_pLaser->PointsInit( vecSrc, vecEnd );
+	g_pLaser->SetColor( 214, 34, 34 );
+	g_pLaser->SetScrollRate( 255 );
+	g_pLaser->SetBrightness( 96 );
+	g_pLaser->pev->spawnflags |= SF_BEAM_TEMPORARY;	// Flag these to be destroyed on save/restore or level transition
+	g_pLaser->pev->owner = m_pPlayer->edict();
+#else
+	//Normally the crowbar doesn't have a laser sight
+	KillLaser();
+#endif //SHOW_CROWBAR_DAMAGE_LINE
+
+#endif
+}
+
 #ifndef CLIENT_DLL
 
 void CCrowbar::CheckSmack(float speed)
 {
 	UTIL_MakeVectors (m_pPlayer->GetWeaponViewAngles());
 	Vector vecSrc	= m_pPlayer->GetGunPosition();
-	Vector vecEnd	= vecSrc + gpGlobals->v_up * 16;
+	Vector vecEnd	= vecSrc + gpGlobals->v_up * CROWBAR_LENGTH;
 
 	TraceResult tr;
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
@@ -176,7 +216,7 @@ void CCrowbar::CheckSmack(float speed)
 				m_pPlayer->m_iWeaponVolume = CROWBAR_BODYHIT_VOLUME;
 				if (pEntity->IsAlive())
 				{
-					flVol = 0.1;
+					flVol = 0.25;
 				}
 				else
 				{
