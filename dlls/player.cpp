@@ -1461,8 +1461,10 @@ void CBasePlayer::PlayerUse( void )
 	if( IsObserver() )
 		return;
 
+	bool highlightActionables = CVAR_GET_FLOAT("vr_highlight_actionables") == 1.0f;
+
 	// Was use pressed or released?
-	if( !( ( pev->button | m_afButtonPressed | m_afButtonReleased) & IN_USE ) )
+	if (!highlightActionables && !( ( pev->button | m_afButtonPressed | m_afButtonReleased) & IN_USE ) )
 		return;
 
 	// Hit Use on a train?
@@ -1535,11 +1537,22 @@ void CBasePlayer::PlayerUse( void )
 	}
 	pObject = pClosest;
 
+	if (highlightActionables && m_LastLocalUsableEntity)
+	{
+	    //Restore previous values
+		m_LastLocalUsableEntity->pev->rendermode = m_LastLocalUsableEntityRenderFX.rendermode;
+		m_LastLocalUsableEntity->pev->renderfx = m_LastLocalUsableEntityRenderFX.renderfx;
+		m_LastLocalUsableEntity->pev->renderamt = m_LastLocalUsableEntityRenderFX.renderamt;
+	}
+    m_LastLocalUsableEntity = nullptr;
+
 	//Check player hasn't put their hand through a wall to use this
     TraceResult tr;
     Vector vecSrc = weaponOrigin;
     Vector vecEnd = EyePosition();
     UTIL_TraceLine( vecSrc, vecEnd, ignore_monsters, edict(), &tr );
+
+    static bool itemUsedHaptic = false;
 
 	// Found an object
 	if( pObject &&
@@ -1548,25 +1561,82 @@ void CBasePlayer::PlayerUse( void )
 	{
 		int caps = pObject->ObjectCaps();
 
+		bool usingObject = false;
+
 		if( m_afButtonPressed & IN_USE )
 			EMIT_SOUND( ENT(pev), CHAN_ITEM, "common/wpn_select.wav", 0.4, ATTN_NORM );
 
 		if( ( ( pev->button & IN_USE ) && ( caps & FCAP_CONTINUOUS_USE ) ) ||
 			 ( ( m_afButtonPressed & IN_USE ) && ( caps & ( FCAP_IMPULSE_USE | FCAP_ONOFF_USE ) ) ) )
 		{
-			if( caps & FCAP_CONTINUOUS_USE )
-				m_afPhysicsFlags |= PFLAG_USING;
+            char buffer[256];
+			if( caps & FCAP_CONTINUOUS_USE ) {
+                m_afPhysicsFlags |= PFLAG_USING;
+
+                //pulse-vibrate
+                sprintf(buffer, "vibrate 10.0 %i %f\n", 1 - (int) CVAR_GET_FLOAT("hand"),
+                        sin(gpGlobals->time * 12.0f) * 0.6f);
+
+                usingObject = true;
+            }
+			else
+			{
+                //big blip to indicate "used" and then stop vibrating
+                if (!itemUsedHaptic) {
+					char buffer[256];
+					sprintf(buffer, "vibrate 250.0 %i 1.0\n", 1 - (int) CVAR_GET_FLOAT("hand"));
+					SERVER_COMMAND(buffer);
+
+					//Set flag so we stop haptics for now
+					itemUsedHaptic = true;
+				}
+            }
 
 			pObject->Use( this, this, USE_SET, 1 );
+
+            SERVER_COMMAND(buffer);
 		}
 		// UNDONE: Send different USE codes for ON/OFF.  Cache last ONOFF_USE object to send 'off' if you turn away
-		else if( ( m_afButtonReleased & IN_USE ) && ( pObject->ObjectCaps() & FCAP_ONOFF_USE ) )	// BUGBUG This is an "off" use
-		{
-			pObject->Use( this, this, USE_SET, 0 );
+		else if( ( m_afButtonReleased & IN_USE ) ) {
+			if (pObject->ObjectCaps() & FCAP_ONOFF_USE)    // BUGBUG This is an "off" use
+			{
+				pObject->Use(this, this, USE_SET, 0);
+			}
+
+			itemUsedHaptic = false;
 		}
+
+
+        if (highlightActionables &&
+            pObject->pev->movetype != MOVETYPE_PUSHSTEP && // We don't want to highlight things like pushable boxes
+            // We don't want to highlight helpful people as "usable" either (even though they are)
+            pObject->Classify() != CLASS_HUMAN_PASSIVE && pObject->Classify() != CLASS_PLAYER_ALLY)
+        {
+            //Make newly located object glow if we are in a position to trigger it
+            m_LastLocalUsableEntity = pObject;
+
+            // save the object's current render fx
+            m_LastLocalUsableEntityRenderFX.rendermode = pObject->pev->rendermode;
+            m_LastLocalUsableEntityRenderFX.renderfx = pObject->pev->renderfx;
+            m_LastLocalUsableEntityRenderFX.renderamt = pObject->pev->renderamt;
+
+            //Update with "glowing" attributes
+            pObject->pev->renderfx = usingObject ? kRenderFxNoDissipation : kRenderFxPulseFast;
+            pObject->pev->rendermode = kRenderGlow;
+            pObject->pev->renderamt = 192;
+
+            if (!usingObject && !itemUsedHaptic) {
+                //continuous vibrate to indicate "usable"
+                char buffer[256];
+                sprintf(buffer, "vibrate 10.0 %i 0.1\n", 1-(int)CVAR_GET_FLOAT("hand"));
+                SERVER_COMMAND(buffer);
+            }
+        }
 	}
 	else
 	{
+        itemUsedHaptic = false;
+
 		if( m_afButtonPressed & IN_USE )
 			EMIT_SOUND( ENT( pev ), CHAN_ITEM, "common/wpn_denyselect.wav", 0.4, ATTN_NORM );
 	}
@@ -2876,6 +2946,8 @@ void CBasePlayer::Spawn( void )
 		m_rgAmmo[i] = 0;
 		m_rgAmmoLast[i] = 0;  // client ammo values also have to be reset  (the death hud clear messages does on the client side)
 	}
+
+	m_LastLocalUsableEntity = nullptr;
 
 	m_lastx = m_lasty = 0;
 

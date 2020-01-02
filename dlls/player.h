@@ -181,6 +181,9 @@ public:
 	CBasePlayerItem *m_pClientActiveItem;  // client version of the active item
 	CBasePlayerItem *m_pLastItem;
 
+	CBaseEntity*	m_LastLocalUsableEntity;
+    entvars_s		m_LastLocalUsableEntityRenderFX;
+
 	// shared ammo slots
 	int	m_rgAmmo[MAX_AMMO_SLOTS];
 	int	m_rgAmmoLast[MAX_AMMO_SLOTS];
