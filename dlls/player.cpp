@@ -1454,7 +1454,7 @@ void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 //
 // PlayerUse - handles USE keypress
 //
-#define	PLAYER_HAND_SEARCH_RADIUS	(float)24
+#define	PLAYER_HAND_SEARCH_RADIUS	(float)64
 
 void CBasePlayer::PlayerUse( void )
 {
