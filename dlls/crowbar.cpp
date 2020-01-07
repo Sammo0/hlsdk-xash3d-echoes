@@ -198,7 +198,7 @@ void CCrowbar::CheckSmack(float speed)
 
 			ClearMultiDamage();
 			// hit damage is greater when swing is faster + weaker for every additional hit
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar * (speed / CROWBAR_MIN_SWING_SPEED) * (1.f / hitCount), gpGlobals->v_forward, &tr, DMG_CLUB);
+			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar * (speed / CROWBAR_MIN_SWING_SPEED) * (1.f / hitCount), gpGlobals->v_up, &tr, DMG_CLUB);
 			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
 			if ( pEntity->Classify() != CLASS_NONE && pEntity->Classify() != CLASS_MACHINE )
