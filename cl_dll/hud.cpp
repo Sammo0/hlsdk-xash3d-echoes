@@ -195,7 +195,7 @@ void CHud::Init( void )
 	CVAR_CREATE( "zoom_sensitivity_ratio", "1.2", 0 );
 
 #ifdef VR
-	default_fov = CVAR_CREATE( "default_fov", "110", 0 );
+	default_fov = CVAR_CREATE( "default_fov", "104", 0 );
 #else
 	default_fov = CVAR_CREATE( "default_fov", "90", 0 );
 #endif
@@ -439,7 +439,13 @@ float g_lastFOV = 0.0;
 
 int CHudBase::GetStereoDepthOffset()
 {
-	return (int)( ( CVAR_GET_FLOAT("vr_stereo_side") * -2.0f ) + 1.0f) * (ScreenWidth / 36.0f);
+	int eye = CVAR_GET_FLOAT("vr_stereo_side");
+
+	//Check for mono mode
+	if (eye > 1)
+		return 0;
+
+	return (int)( ( eye * -2.0f ) + 1.0f) * (ScreenWidth / 36.0f);
 }
 
 
