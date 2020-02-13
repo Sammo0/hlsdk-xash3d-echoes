@@ -254,8 +254,6 @@ public:
 
 	virtual CBasePlayerItem *GetWeaponPtr( void ) { return NULL; };
 
-	virtual void LevelChanged( void ) {};
-
 	static ItemInfo ItemInfoArray[ MAX_WEAPONS ];
 	static AmmoInfo AmmoInfoArray[ MAX_AMMO_SLOTS ];
 
@@ -278,6 +276,31 @@ public:
 	// int		m_iIdPrimary;										// Unique Id for primary ammo
 	// int		m_iIdSecondary;										// Unique Id for secondary ammo
 };
+
+
+class CLaserSpot : public CBaseEntity
+{
+    void Spawn( void );
+    void Precache( void );
+
+    int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
+
+public:
+    void Suspend( float flSuspendTime );
+    void EXPORT Revive( void );
+
+    static CLaserSpot *CreateSpot( void );
+};
+
+class CLaserSight : public CBeam
+{
+	void Spawn( void );
+	int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
+
+public:
+	static CLaserSight *CreateLaserSight( void );
+};
+
 
 // inventory items that 
 class CBasePlayerWeapon : public CBasePlayerItem
@@ -332,9 +355,7 @@ public:
 	virtual void MakeLaser( void );
 	virtual void KillLaser( void );
 
-	virtual void LevelChanged( void );
-
-	int	PrimaryAmmoIndex(); 
+	int	PrimaryAmmoIndex();
 	int	SecondaryAmmoIndex(); 
 
 	void PrintState( void );
@@ -360,7 +381,8 @@ public:
 	float	m_flPrevPrimaryAttack;
 	float	m_flLastFireTime;
 
-	static CBeam 	*g_pLaser;
+	CLaserSight 	*m_pLaser;
+    CLaserSpot 		*m_pLaserSpot;
 };
 
 class CBasePlayerAmmo : public CBaseEntity
@@ -682,20 +704,6 @@ public:
 private:
 	unsigned short m_usDoubleFire;
 	unsigned short m_usSingleFire;
-};
-
-class CLaserSpot : public CBaseEntity
-{
-	void Spawn( void );
-	void Precache( void );
-
-	int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
-
-public:
-	void Suspend( float flSuspendTime );
-	void EXPORT Revive( void );
-
-	static CLaserSpot *CreateSpot( void );
 };
 
 class CRpg : public CBasePlayerWeapon

@@ -429,7 +429,9 @@ BOOL CRpg::CanHolster( void )
 
 void CRpg::Holster( int skiplocal /* = 0 */ )
 {
-	m_fInReload = FALSE;// cancel any reload in progress.
+    KillLaser();
+
+    m_fInReload = FALSE;// cancel any reload in progress.
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	

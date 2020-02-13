@@ -2883,7 +2883,6 @@ void CBasePlayer::Spawn( void )
 	m_bitsDamageType = 0;
 	m_afPhysicsFlags = 0;
 	m_fLongJump = FALSE;// no longjump module.
-	m_ChangedLevel = true;
 
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "hl", "1" );
@@ -3855,12 +3854,6 @@ void CBasePlayer::ItemPreFrame()
 
 	if( !m_pActiveItem )
 		return;
-
-    if (m_ChangedLevel)
-    {
-        m_pActiveItem->LevelChanged();
-        m_ChangedLevel = false;
-    }
 
     m_pActiveItem->ItemPreFrame();
 }
