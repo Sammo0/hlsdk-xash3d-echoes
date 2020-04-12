@@ -366,7 +366,19 @@ void CSatchel::PrimaryAttack()
 
 void CSatchel::SecondaryAttack( void )
 {
-	PrimaryAttack();
+	switch( m_chargeReady )
+	{
+		//If we secondary attack while we are satchel ready, allow another satchel to be thrown
+		case SATCHEL_READY:
+		case SATCHEL_IDLE:
+		{
+			PreThrow();
+		}
+		break;
+		case SATCHEL_RELOAD:
+			// we're reloading, don't allow fire
+			break;
+	}
 }
 
 void CSatchel::PreThrow()
@@ -443,6 +455,11 @@ void CSatchel::WeaponIdle( void )
 
 	switch( m_chargeReady )
 	{
+		//Allow user to throw second satchel, so don't break after this
+	case SATCHEL_READY:
+		SendWeaponAnim( SATCHEL_RADIO_FIDGET1 );
+		// use hivehand animations
+		strcpy( m_pPlayer->m_szAnimExtention, "hive" );
 	case SATCHEL_IDLE:
 		if ( m_flStartThrow )
 		{
@@ -465,11 +482,6 @@ void CSatchel::WeaponIdle( void )
 
 			m_flStartThrow = 0;
 		}
-		break;
-	case SATCHEL_READY:
-		SendWeaponAnim( SATCHEL_RADIO_FIDGET1 );
-		// use hivehand animations
-		strcpy( m_pPlayer->m_szAnimExtention, "hive" );
 		break;
 	case SATCHEL_RELOAD:
 		if( !m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] )
