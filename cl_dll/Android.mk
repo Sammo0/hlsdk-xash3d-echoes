@@ -1,4 +1,4 @@
-LOCAL_MODULE := client
+LOCAL_MODULE := client_echoes
 
 APP_PLATFORM := android-19
 
