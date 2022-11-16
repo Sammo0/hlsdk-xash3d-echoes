@@ -113,10 +113,18 @@ BOOL CShotgun::Deploy()
 	return DefaultDeploy( "models/v_shotgun.mdl", "models/p_shotgun.mdl", SHOTGUN_DRAW, "shotgun" );
 }
 
+void CShotgun::Holster( int skiplocal )
+{
+	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
+	SendWeaponAnim( SHOTGUN_HOLSTER );
+}
+
 void CShotgun::PrimaryAttack()
 {
 	// don't fire underwater
+
 	if( m_pPlayer->IsWeaponUnderWater() )
+
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = GetNextAttackDelay( 0.15 );
@@ -187,7 +195,7 @@ void CShotgun::PrimaryAttack()
 void CShotgun::SecondaryAttack( void )
 {
 	// don't fire underwater
-	if( m_pPlayer->IsWeaponUnderWater() )
+	if (m_pPlayer->pev->waterlevel == 3 && m_pPlayer->pev->watertype > CONTENT_FLYFIELD)
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = GetNextAttackDelay( 0.15 );

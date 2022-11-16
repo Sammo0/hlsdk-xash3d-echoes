@@ -401,7 +401,8 @@ void CEgon::UpdateEffect( const Vector &startPoint, const Vector &endPoint, floa
 		m_pBeam->SetWidth( (int)( 40 - ( timeBlend * 20 ) ) );
 	}
 
-	UTIL_SetOrigin( m_pSprite->pev, endPoint );
+//	UTIL_SetOrigin( m_pSprite->pev, endPoint );
+	UTIL_SetOrigin( m_pSprite, endPoint );
 	m_pSprite->pev->frame += 8 * gpGlobals->frametime;
 	if( m_pSprite->pev->frame > m_pSprite->Frames() )
 		m_pSprite->pev->frame = 0;

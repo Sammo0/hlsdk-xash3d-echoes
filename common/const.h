@@ -339,6 +339,7 @@
 // coord, coord, coord (pos) 
 // byte (radius in 10's) 
 // byte byte byte (color)
+//LRC - ignore this, they're lying // byte (brightness)
 // byte (life in 10's)
 // byte (decay rate in 10's)
 
@@ -608,9 +609,13 @@
 
 #define CONTENTS_LADDER		-16
 
+//LRC- New (long overdue) content types for Spirit
 #define CONTENT_FLYFIELD		-17
 #define CONTENT_GRAVITY_FLYFIELD	-18
 #define CONTENT_FOG			-19
+#define CONTENT_SPECIAL1			-20 //LRC - used by the particle systems
+#define CONTENT_SPECIAL2			-21
+#define CONTENT_SPECIAL3			-22
 
 #define CONTENT_EMPTY		-1
 #define CONTENT_SOLID		-2
@@ -618,6 +623,7 @@
 #define CONTENT_SLIME		-4
 #define CONTENT_LAVA		-5
 #define CONTENT_SKY			-6
+#define CONTENT_SOLID	-2
 
 // channels
 #define CHAN_AUTO			0
@@ -732,7 +738,7 @@ enum
 	kRenderFxExplode,			// Scale up really big!
 	kRenderFxGlowShell,			// Glowing Shell
 	kRenderFxClampMinScale,		// Keep this sprite from getting very small (SPRITES only!)
-	kRenderFxLightMultiplier	//CTM !!!CZERO added to tell the studiorender that the value in iuser2 is a lightmultiplier
+	kRenderFxReflection,		//LRC - draw a reflection under my feet
 };
 
 typedef unsigned int		func_t;
@@ -740,6 +746,7 @@ typedef int		string_t;
 
 typedef unsigned char	byte;
 typedef unsigned short	word;
+#define _DEF_BYTE_
 
 #undef true
 #undef false
@@ -760,6 +767,18 @@ typedef struct
 	unsigned	r, g, b, a;
 } colorVec;
 
+#ifdef _WIN32
+#pragma pack(push,2)
+#endif
+
+typedef struct
+{
+	unsigned short r, g, b, a;
+} PackedColorVec;
+
+#ifdef _WIN32
+#pragma pack(pop)
+#endif
 typedef struct link_s
 {
 	struct link_s	*prev, *next;

@@ -151,7 +151,9 @@ void CGauss::Holster( int skiplocal /* = 0 */ )
 void CGauss::PrimaryAttack()
 {
 	// don't fire underwater
+
 	if( m_pPlayer->IsWeaponUnderWater() )
+
 	{
 		PlayEmptySound();
 		m_flNextSecondaryAttack = m_flNextPrimaryAttack = GetNextAttackDelay( 0.15 );

@@ -16,6 +16,9 @@
 // nodes.cpp - AI node tree stuff.
 //=========================================================
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include	"extdll.h"
 #include	"util.h"
 #include	"cbase.h"
@@ -142,8 +145,8 @@ int CGraph::AllocNodes( void )
 //=========================================================
 entvars_t *CGraph::LinkEntForLink( CLink *pLink, CNode *pNode )
 {
-	edict_t	*pentSearch;
-	edict_t	*pentTrigger;
+	CBaseEntity	*pSearch;
+	CBaseEntity	*pTrigger;
 	entvars_t *pevTrigger;
 	entvars_t *pevLinkEnt;
 	TraceResult tr;
@@ -152,7 +155,7 @@ entvars_t *CGraph::LinkEntForLink( CLink *pLink, CNode *pNode )
 	if( !pevLinkEnt )
 		return NULL;
 
-	pentSearch = NULL;// start search at the top of the ent list.
+	pSearch = NULL;// start search at the top of the ent list.
 
 	if( FClassnameIs( pevLinkEnt, "func_door" ) || FClassnameIs( pevLinkEnt, "func_door_rotating" ) )
 	{
@@ -167,11 +170,10 @@ entvars_t *CGraph::LinkEntForLink( CLink *pLink, CNode *pNode )
 
 		while( 1 )
 		{
-			pentTrigger = FIND_ENTITY_BY_TARGET( pentSearch, STRING( pevLinkEnt->targetname ) );// find the button or trigger
+			pTrigger = UTIL_FindEntityByTarget ( pSearch, STRING( pevLinkEnt->targetname ) );// find the button or trigger
 
-			if( FNullEnt( pentTrigger ) )
-			{
-				// no trigger found
+			if ( !pTrigger )
+			{// no trigger found
 
 				// right now this is a problem among auto-open doors, or any door that opens through the use 
 				// of a trigger brush. Trigger brushes have no models, and don't show up in searches. Just allow
@@ -179,8 +181,8 @@ entvars_t *CGraph::LinkEntForLink( CLink *pLink, CNode *pNode )
 				return pevLinkEnt;
 			}
 
-			pentSearch = pentTrigger;
-			pevTrigger = VARS( pentTrigger );
+			pSearch = pTrigger;
+			pevTrigger = pTrigger->pev;
 
 			if( FClassnameIs( pevTrigger, "func_button" ) || FClassnameIs( pevTrigger, "func_rot_button" ) )
 			{
@@ -213,6 +215,7 @@ entvars_t *CGraph::LinkEntForLink( CLink *pLink, CNode *pNode )
 //=========================================================
 int CGraph::HandleLinkEnt( int iNode, entvars_t *pevLinkEnt, int afCapMask, NODEQUERY queryType )
 {
+	edict_t  *pentWorld;
 	//edict_t *pentWorld;
 	CBaseEntity *pDoor;
 	TraceResult tr;
@@ -461,7 +464,7 @@ int CGraph::NodeType( const CBaseEntity *pEntity )
 {
 	if( pEntity->pev->movetype == MOVETYPE_FLY )
 	{
-		if( pEntity->pev->waterlevel != 0 )
+		if (pEntity->pev->waterlevel != 0 && pEntity->pev->watertype != CONTENT_FOG)
 		{
 			return bits_NODE_WATER;
 		}
@@ -1508,15 +1511,14 @@ void CTestHull::Spawn( entvars_t *pevMasterNode )
 	pev->yaw_speed = 8;
 
 	if( WorldGraph.m_fGraphPresent )
-	{
-		// graph loaded from disk, so we don't need the test hull
-		SetThink( &CBaseEntity::SUB_Remove );
-		pev->nextthink = gpGlobals->time;
+	{// graph loaded from disk, so we don't need the test hull
+		SetThink(&CTestHull :: SUB_Remove );
+		SetNextThink( 0 );
 	}
 	else
 	{
 		SetThink( &CTestHull::DropDelay );
-		pev->nextthink = gpGlobals->time + 1;
+		SetNextThink( 1 );
 	}
 
 	// Make this invisible
@@ -1533,11 +1535,11 @@ void CTestHull::DropDelay( void )
 {
 	//UTIL_CenterPrintAll( "Node Graph out of Date. Rebuilding..." );
 
-	UTIL_SetOrigin( VARS( pev ), WorldGraph.m_pNodes[0].m_vecOrigin );
+	UTIL_SetOrigin ( this, WorldGraph.m_pNodes[ 0 ].m_vecOrigin );
 
 	SetThink( &CTestHull::CallBuildNodeGraph );
 
-	pev->nextthink = gpGlobals->time + 1;
+	SetNextThink( 1 );
 }
 
 //=========================================================
@@ -1623,7 +1625,7 @@ void CTestHull::ShowBadNode( void )
 	UTIL_ParticleEffect( pev->origin + gpGlobals->v_right * 64, g_vecZero, 255, 25 );
 	UTIL_ParticleEffect( pev->origin - gpGlobals->v_right * 64, g_vecZero, 255, 25 );
 
-	pev->nextthink = gpGlobals->time + 0.1;
+	SetNextThink( 0.1 );
 }
 
 extern BOOL gTouchDisabled;
@@ -1686,8 +1688,8 @@ void CTestHull::BuildNodeGraph( void )
 	float flDist;
 	int step;
 
-	SetThink( &CBaseEntity::SUB_Remove );// no matter what happens, the hull gets rid of itself.
-	pev->nextthink = gpGlobals->time;
+	SetThink(&CTestHull :: SUB_Remove );// no matter what happens, the hull gets rid of itself.
+	SetNextThink( 0 );
 
 	//malloc a swollen temporary connection pool that we trim down after we know exactly how many connections there are.
 	pTempPool = (CLink *)calloc( sizeof(CLink), ( WorldGraph.m_cNodes * MAX_NODE_INITIAL_LINKS ) );
@@ -1860,7 +1862,7 @@ void CTestHull::BuildNodeGraph( void )
 					break;
 				}
 
-				UTIL_SetOrigin( pev, pSrcNode->m_vecOrigin );// place the hull on the node
+				UTIL_SetOrigin ( this, pSrcNode->m_vecOrigin );// place the hull on the node
 
 				if( !FBitSet( pev->flags, FL_ONGROUND ) )
 				{
@@ -2643,7 +2645,7 @@ int CGraph::FSaveGraph( const char *szMapName )
 int CGraph::FSetGraphPointers( void )
 {
 	int i;
-	edict_t	*pentLinkEnt;
+	CBaseEntity	*pLinkEnt;
 
 	for( i = 0; i < m_cLinks; i++ )
 	{
@@ -2658,9 +2660,9 @@ int CGraph::FSetGraphPointers( void )
 			// m_szLinkEntModelname is not necessarily NULL terminated (so we can store it in a more alignment-friendly 4 bytes)
 			memcpy( name, m_pLinkPool[i].m_szLinkEntModelname, 4 );
 			name[4] = 0;
-			pentLinkEnt =  FIND_ENTITY_BY_STRING( NULL, "model", name );
+			pLinkEnt =  UTIL_FindEntityByString( NULL, "model", name );
 
-			if( FNullEnt( pentLinkEnt ) )
+			if ( !pLinkEnt )
 			{
 				// the ent isn't around anymore? Either there is a major problem, or it was removed from the world
 				// ( like a func_breakable that's been destroyed or something ). Make sure that LinkEnt is null.
@@ -2669,7 +2671,7 @@ int CGraph::FSetGraphPointers( void )
 			}
 			else
 			{
-				m_pLinkPool[i].m_pLinkEnt = VARS( pentLinkEnt );
+				m_pLinkPool[ i ].m_pLinkEnt = pLinkEnt->pev;
 
 				if( !FBitSet( m_pLinkPool[i].m_pLinkEnt->flags, FL_GRAPHED ) )
 				{
@@ -3655,7 +3657,7 @@ void CNodeViewer::Spawn()
 
 	m_iDraw = 0;
 	SetThink( &CNodeViewer::DrawThink );
-	pev->nextthink = gpGlobals->time;
+	SetNextThink( 0 );
 }
 
 void CNodeViewer::FindNodeConnections( int iNode )
@@ -3694,7 +3696,7 @@ void CNodeViewer::AddNode( int iFrom, int iTo )
 
 void CNodeViewer::DrawThink( void )
 {
-	pev->nextthink = gpGlobals->time;
+	SetNextThink( 0 );
 
 	for( int i = 0; i < 10; i++ )
 	{

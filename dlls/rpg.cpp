@@ -59,6 +59,15 @@ CLaserSpot *CLaserSpot::CreateSpot( void )
 
 //=========================================================
 //=========================================================
+CLaserSpot *CLaserSpot::CreateSpot( const char* spritename )
+{
+	CLaserSpot *pSpot = CreateSpot();
+	SET_MODEL(ENT(pSpot->pev), spritename);
+	return pSpot;
+}
+
+//=========================================================
+//=========================================================
 void CLaserSpot::Spawn( void )
 {
 	Precache( );
@@ -69,8 +78,10 @@ void CLaserSpot::Spawn( void )
 	pev->renderfx = kRenderFxNoDissipation;
 	pev->renderamt = 255;
 
+
 	SET_MODEL(ENT(pev), "sprites/laserdot.spr");
 	UTIL_SetOrigin( pev, pev->origin );
+
 };
 
 //=========================================================
@@ -79,9 +90,12 @@ void CLaserSpot::Spawn( void )
 void CLaserSpot::Suspend( float flSuspendTime )
 {
 	pev->effects |= EF_NODRAW;
+
 	
 	SetThink(&CLaserSpot:: Revive );
 	pev->nextthink = gpGlobals->time + flSuspendTime;
+
+
 }
 
 //=========================================================
@@ -107,7 +121,7 @@ CRpgRocket *CRpgRocket::CreateRpgRocket( Vector vecOrigin, Vector vecAngles, CBa
 {
 	CRpgRocket *pRocket = GetClassPtr( (CRpgRocket *)NULL );
 
-	UTIL_SetOrigin( pRocket->pev, vecOrigin );
+	UTIL_SetOrigin( pRocket, vecOrigin );
 	pRocket->pev->angles = vecAngles;
 	pRocket->Spawn();
 	pRocket->SetTouch( &CRpgRocket::RocketTouch );
@@ -127,14 +141,18 @@ void CRpgRocket :: Spawn( void )
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
 
+
 	SET_MODEL(ENT(pev), "models/rpgrocket.mdl");
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 
+
 	pev->classname = MAKE_STRING("rpg_rocket");
+
 
 	SetThink(&CRpgRocket:: IgniteThink );
 	SetTouch(&CRpgRocket:: ExplodeTouch );
+
 
 	Vector vecAiming = pev->angles;
 	vecAiming.x = -vecAiming.x - 30;
@@ -143,7 +161,7 @@ void CRpgRocket :: Spawn( void )
 	pev->velocity = gpGlobals->v_forward * 250;
 	pev->gravity = 0.5;
 
-	pev->nextthink = gpGlobals->time + 0.4;
+	SetNextThink( 0.4 );
 
 	pev->dmg = gSkillData.plrDmgRPG;
 }
@@ -200,9 +218,10 @@ void CRpgRocket :: IgniteThink( void  )
 	m_flIgniteTime = gpGlobals->time;
 
 	// set to follow laser spot
+
 	SetThink(&CRpgRocket:: FollowThink );
 	pev->nextthink = gpGlobals->time + 0.1;
-}
+
 
 
 void CRpgRocket :: FollowThink( void  )
@@ -243,9 +262,10 @@ void CRpgRocket :: FollowThink( void  )
 	float flSpeed = pev->velocity.Length();
 	if (gpGlobals->time - m_flIgniteTime < 1.0)
 	{
+
 		pev->velocity = pev->velocity * 0.2 + vecTarget * (flSpeed * 0.8 + 400);
 		if (pev->waterlevel == 3)
-		{
+
 			// go slow underwater
 			if (pev->velocity.Length() > 300)
 			{
@@ -269,14 +289,16 @@ void CRpgRocket :: FollowThink( void  )
 			STOP_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav" );
 		}
 		pev->velocity = pev->velocity * 0.2 + vecTarget * flSpeed * 0.798;
-		if (pev->waterlevel == 0 && pev->velocity.Length() < 1500)
+
+		if ((pev->waterlevel == 0 || pev->watertype == CONTENT_FOG) && pev->velocity.Length() < 1500)
+
 		{
 			Detonate( );
 		}
 	}
 	// ALERT( at_console, "%.0f\n", flSpeed );
 
-	pev->nextthink = gpGlobals->time + 0.1;
+	SetNextThink( 0.1 );
 }
 #endif
 
@@ -433,6 +455,7 @@ void CRpg::Holster( int skiplocal /* = 0 */ )
 
     m_fInReload = FALSE;// cancel any reload in progress.
 
+
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	
 	SendWeaponAnim( RPG_HOLSTER1 );
@@ -565,9 +588,11 @@ void CRpg::UpdateSpot( void )
 		Vector vecAiming = gpGlobals->v_forward;
 
 		TraceResult tr;
+
 		UTIL_TraceLine ( vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr );
 		
 		UTIL_SetOrigin( m_pSpot->pev, tr.vecEndPos );
+
 	}
 #endif
 

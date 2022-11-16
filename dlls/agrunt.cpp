@@ -25,6 +25,7 @@
 #include	"weapons.h"
 #include	"soundent.h"
 #include	"hornet.h"
+#include	"scripted.h"
 
 //=========================================================
 // monster-specific schedule types
@@ -66,6 +67,10 @@ int iAgruntMuzzleFlash;
 
 #define		AGRUNT_MELEE_DIST	100
 
+//LRC - body definitions for the Agrunt model
+#define		AGRUNT_BODY_HASGUN 0
+#define		AGRUNT_BODY_NOGUN  1
+
 class CAGrunt : public CSquadMonster
 {
 public:
@@ -97,6 +102,7 @@ public:
 	void StopTalking( void );
 	BOOL ShouldSpeak( void );
 	CUSTOM_SCHEDULES
+	virtual void Killed( entvars_t *pevAttacker, int iGib );
 
 	virtual int Save( CSave &save );
 	virtual int Restore( CRestore &restore );
@@ -109,6 +115,8 @@ public:
 	static const char *pPainSounds[];
 	static const char *pIdleSounds[];
 	static const char *pAlertSounds[];
+	static const char *pStepSounds[];
+	static const char *pFireSounds[];
 
 	BOOL m_fCanHornetAttack;
 	float m_flNextHornetAttackCheck;
@@ -185,6 +193,21 @@ const char *CAGrunt::pAlertSounds[] =
 	"agrunt/ag_alert3.wav",
 	"agrunt/ag_alert4.wav",
 	"agrunt/ag_alert5.wav",
+};
+
+const char *CAGrunt::pStepSounds[] =
+{
+	"agrunt/ag_step1.wav",
+	"agrunt/ag_step2.wav",
+	"agrunt/ag_step3.wav",
+	"agrunt/ag_step4.wav",
+};
+
+const char *CAGrunt::pFireSounds[] =
+{
+	"agrunt/ag_fire1.wav",
+	"agrunt/ag_fire2.wav",
+	"agrunt/ag_fire3.wav",
 };
 
 //=========================================================
@@ -381,7 +404,7 @@ void CAGrunt::PainSound( void )
 //=========================================================
 int CAGrunt::Classify( void )
 {
-	return CLASS_ALIEN_MILITARY;
+	return m_iClass?m_iClass:CLASS_ALIEN_MILITARY;
 }
 
 //=========================================================
@@ -466,23 +489,26 @@ void CAGrunt::HandleAnimEvent( MonsterEvent_t *pEvent )
 			UTIL_MakeVectors ( pHornet->pev->angles );
 			pHornet->pev->velocity = gpGlobals->v_forward * 300;
 
-			switch( RANDOM_LONG ( 0 , 2 ) )
+			switch ( RANDOM_LONG ( 0 , 2 ) )
 			{
-				case 0:
-					EMIT_SOUND_DYN( ENT( pev ), CHAN_WEAPON, "agrunt/ag_fire1.wav", 1.0, ATTN_NORM, 0, 100 );
-					break;
-				case 1:
-					EMIT_SOUND_DYN( ENT( pev ), CHAN_WEAPON, "agrunt/ag_fire2.wav", 1.0, ATTN_NORM, 0, 100 );
-					break;
-				case 2:
-					EMIT_SOUND_DYN( ENT( pev ), CHAN_WEAPON, "agrunt/ag_fire3.wav", 1.0, ATTN_NORM, 0, 100 );
-					break;
+				case 0:	EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, "agrunt/ag_fire1.wav", 1.0, ATTN_NORM, 0, 100 );	break;
+				case 1:	EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, "agrunt/ag_fire2.wav", 1.0, ATTN_NORM, 0, 100 );	break;
+				case 2:	EMIT_SOUND_DYN ( ENT(pev), CHAN_WEAPON, "agrunt/ag_fire3.wav", 1.0, ATTN_NORM, 0, 100 );	break;
 			}
 
 			CBaseMonster *pHornetMonster = pHornet->MyMonsterPointer();
 
+			//LRC - hornets have the same allegiance as their creators
+			pHornetMonster->m_iPlayerReact = m_iPlayerReact;
+			pHornetMonster->m_iClass = m_iClass;
+			if (m_afMemory & bits_MEMORY_PROVOKED) // if I'm mad at the player, so are my hornets
+				pHornetMonster->Remember(bits_MEMORY_PROVOKED);
+
 			if( pHornetMonster )
 			{
+				if (m_pCine && m_pCine->PreciseAttack()) //LRC- are we doing a scripted action?
+					pHornetMonster->m_hEnemy = m_hTargetEnt;
+				else
 				pHornetMonster->m_hEnemy = m_hEnemy;
 			}
 		}
@@ -492,10 +518,10 @@ void CAGrunt::HandleAnimEvent( MonsterEvent_t *pEvent )
 		{
 		// left foot
 		case 0:
-			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "player/pl_ladder2.wav", 1, ATTN_NORM, 0, 70 );
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "agrunt/ag_step2.wav", 1, ATTN_NORM, 0, 70 );
 			break;
 		case 1:
-			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "player/pl_ladder4.wav", 1, ATTN_NORM, 0, 70 );
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "agrunt/ag_step4.wav", 1, ATTN_NORM, 0, 70 );
 			break;
 		}
 		break;
@@ -504,10 +530,10 @@ void CAGrunt::HandleAnimEvent( MonsterEvent_t *pEvent )
 		switch( RANDOM_LONG( 0, 1 ) )
 		{
 		case 0:
-			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "player/pl_ladder1.wav", 1, ATTN_NORM, 0, 70 );
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "agrunt/ag_step1.wav", 1, ATTN_NORM, 0, 70 );
 			break;
 		case 1:
-			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "player/pl_ladder3.wav", 1, ATTN_NORM, 0 ,70);
+			EMIT_SOUND_DYN( ENT( pev ), CHAN_BODY, "agrunt/ag_step3.wav", 1, ATTN_NORM, 0 ,70);
 			break;
 		}
 		break;
@@ -583,14 +609,18 @@ void CAGrunt::Spawn()
 {
 	Precache();
 
-	SET_MODEL( ENT( pev ), "models/agrunt.mdl" );
+	if (pev->model)
+		SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
+	else
+		SET_MODEL( ENT( pev ), "models/agrunt.mdl" );
 	UTIL_SetSize( pev, Vector( -32, -32, 0 ), Vector( 32, 32, 64 ) );
 
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_GREEN;
 	pev->effects = 0;
-	pev->health = gSkillData.agruntHealth;
+	if (pev->health == 0)
+		pev->health = gSkillData.agruntHealth;
 	m_flFieldOfView = 0.2;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState = MONSTERSTATE_NONE;
 	m_afCapability = 0;
@@ -610,7 +640,10 @@ void CAGrunt::Precache()
 {
 	size_t i;
 
-	PRECACHE_MODEL( "models/agrunt.mdl" );
+	if (pev->model)
+		PRECACHE_MODEL(STRING(pev->model)); //LRC
+	else
+		PRECACHE_MODEL( "models/agrunt.mdl" );
 
 	for( i = 0; i < ARRAYSIZE( pAttackHitSounds ); i++ )
 		PRECACHE_SOUND( pAttackHitSounds[i] );
@@ -632,6 +665,12 @@ void CAGrunt::Precache()
 
 	for( i = 0; i < ARRAYSIZE( pAlertSounds ); i++ )
 		PRECACHE_SOUND( pAlertSounds[i] );
+
+	for( i = 0; i < ARRAYSIZE( pFireSounds ); i++ )
+		PRECACHE_SOUND( pFireSounds[i] );
+		
+	for( i = 0; i < ARRAYSIZE( pStepSounds ); i++ )
+		PRECACHE_SOUND( pStepSounds[i] );
 
 	PRECACHE_SOUND( "hassault/hw_shoot1.wav" );
 
@@ -1175,4 +1214,22 @@ Schedule_t *CAGrunt::GetScheduleOfType( int Type )
 	}
 
 	return CSquadMonster::GetScheduleOfType( Type );
+}
+
+
+void CAGrunt::Killed( entvars_t *pevAttacker, int iGib )
+{
+	if ( pev->spawnflags & SF_MONSTER_NO_WPN_DROP )
+	{// drop the hornetgun!
+		Vector vecGunPos;
+		Vector vecGunAngles;
+
+		pev->body = AGRUNT_BODY_NOGUN;
+
+		GetAttachment( 0, vecGunPos, vecGunAngles );
+		
+		DropItem( "weapon_hornetgun", vecGunPos, vecGunAngles );
+	}
+
+	CBaseMonster::Killed( pevAttacker, iGib );
 }
